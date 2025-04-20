@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firm Signup</title>
+</head>
+<body>
+
+    {% if messages %}
+    <ul>
+      {% for message in messages %}
+        {% if message.tags == 'error' %}
+          <li style="color: red;">{{ message }}</li>
+        {% else %}
+          <li style="color: green;">{{ message }}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% endif %}  
+
+<h2>Firm Signup</h2>
+<form method="post">
+    {% csrf_token %}
+    Name: <input type="text" name="name"><br>
+    Address: <input type="text" name="address"><br>
+    Email: <input type="email" name="email"><br>
+    Password: <input type="password" name="password"><br>
+    Phone: <input type="text" name="phone"><br>
+    <button type="submit">Sign Up</button>
+</form>
+
+</body>
+</html>
