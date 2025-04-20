@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyCase - Dashboard</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>MyCase</h2>
+            </div>
+            <div class="sidebar-menu">
+                <div class="menu-category">
+                    <h3>Legal Support</h3>
+                    <div class="menu-item">
+                        <span>New Cases</span>
+                    </div>
+                    <div class="menu-item">
+                        <span>Tasks</span>
+                    </div>
+                    <div class="menu-item">
+                        <span>Appointments</span>
+                    </div>
+                    <div class="menu-item">
+                        <span>Calendar</span>
+                    </div>
+                </div>
+                <div class="menu-category">
+                    <h3>Legal Appointments</h3>
+                    <div class="menu-item">
+                        <span>Calendar</span>
+                    </div>
+                    <div class="menu-item">
+                        <span>Legal Status</span>
+                    </div>
+                    <div class="menu-item">
+                        <span>Case Insights</span>
+                    </div>
+                    <div class="menu-item">
+                        <span>Legal Growth</span>
+                    </div>
+                </div>
+                <div class="menu-category">
+                    <h3>Client Data</h3>
+                    <div class="menu-item">
+                        <span>Case</span>
+                    </div>
+                    <div class="menu-item">
+                        <span>Appointment</span>
+                    </div>
+                    <div class="menu-item">
+                        <span>Lawyers</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="navbar">
+                <div class="navbar-left">
+                    <h2>Dashboard</h2>
+                </div>
+                <div class="navbar-right">
+                    <div class="navbar-item">
+                        <span>Notifications</span>
+                        <div class="navbar-dropdown">
+                            <div class="dropdown-item">New case assigned</div>
+                            <div class="dropdown-item">Appointment reminder</div>
+                            <div class="dropdown-item">Payment received</div>
+                        </div>
+                    </div>
+                    <div class="navbar-item">
+                        <span>User Profile</span>
+                        <div class="navbar-dropdown">
+                            <div class="dropdown-item">My Account</div>
+                            <div class="dropdown-item">Settings</div>
+                            <div class="dropdown-item" id="logoutBtn">Logout</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="content-area">
+                <div class="cards-container">
+                    <div class="card main-card">
+                        <h3>Case Overview</h3>
+                        <div class="card-content">
+                            <div class="stat-item">
+                                <span class="stat-value">24</span>
+                                <span class="stat-label">Active Cases</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">5</span>
+                                <span class="stat-label">Upcoming Hearings</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">12</span>
+                                <span class="stat-label">Completed Cases</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Recent Activities</h3>
+                        <div class="card-content">
+                            <div class="activity-item">
+                                <span class="activity-icon">📄</span>
+                                <span>New documents uploaded</span>
+                            </div>
+                            <div class="activity-item">
+                                <span class="activity-icon">👥</span>
+                                <span>Client meeting scheduled</span>
+                            </div>
+                            <div class="activity-item">
+                                <span class="activity-icon">🔄</span>
+                                <span>Case status updated</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Upcoming Tasks</h3>
+                        <div class="card-content">
+                            <div class="task-item">
+                                <input type="checkbox" id="task1">
+                                <label for="task1">Prepare for hearing on May 15</label>
+                            </div>
+                            <div class="task-item">
+                                <input type="checkbox" id="task2">
+                                <label for="task2">Review client documents</label>
+                            </div>
+                            <div class="task-item">
+                                <input type="checkbox" id="task3">
+                                <label for="task3">Submit motion by Friday</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Client Communications</h3>
+                        <div class="card-content">
+                            <div class="comm-item">
+                                <span class="badge">3</span>
+                                <span>Unread messages</span>
+                            </div>
+                            <div class="comm-item">
+                                <span class="badge">2</span>
+                                <span>Pending responses</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Financial Summary</h3>
+                        <div class="card-content">
+                            <div class="finance-item">
+                                <span class="amount negative">$12,450</span>
+                                <span>Outstanding invoices</span>
+                            </div>
+                            <div class="finance-item">
+                                <span class="amount positive">$5,200</span>
+                                <span>Recent payments</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="windows-activate">
+        Activate Windows<br>Go to Settings to activate Windows.
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
