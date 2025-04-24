@@ -1,0 +1,164 @@
+{% extends 'accounts/base.html' %}
+{% block content %}
+
+<!-- Header -->
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Law Firm Sign Up</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Register your law firm account</p>
+        </div>
+    </div>
+</header>
+<div class="container">
+    <div class="row">
+        <center>
+            <div class="col-8">
+                <br /><br />
+                <form method="POST" action="{% url 'firm_signup' %}">
+                    {% csrf_token %}
+
+                    <!-- Firm Name -->
+                    <input type="text" class="form-control" name="lawfirm_name" placeholder="Law Firm Name"
+                        value="{{ lawfirm_name|default_if_none:'' }}">
+                    <br />
+
+                    <!-- Email -->
+                    <input type="email" class="form-control" name="lawfirm_email" placeholder="Email"
+                        value="{{ lawfirm_email|default_if_none:'' }}">
+                    <br />
+
+                    <!-- Contact -->
+                    <input type="text" class="form-control" name="lawfirm_contact" placeholder="Contact Number"
+                        value="{{ lawfirm_contact|default_if_none:'' }}">
+                    <br />
+
+                    <!-- Country -->
+                    <select class="form-control" name="country" id="country-select">
+                        <option value="">Select Country</option>
+                        <option value="USA">USA</option>
+                        <option value="India">India</option>
+                        <option value="UK">UK</option>
+                        <option value="Canada">Canada</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Germany">Germany</option>
+                        <option value="France">France</option>
+                        <option value="China">China</option>
+                        <option value="Japan">Japan</option>
+                        <option value="South Korea">South Korea</option>
+                        <!-- Other countries -->
+                        <option value="Pakistan">Pakistan</option>
+                        <option value="Italy">Italy</option>
+                        <option value="Spain">Spain</option>
+                        <option value="Netherlands">Netherlands</option>
+                        <option value="Brazil">Brazil</option>
+                        <option value="Mexico">Mexico</option>
+                        <option value="Russia">Russia</option>
+                        <option value="Turkey">Turkey</option>
+                        <option value="South Africa">South Africa</option>
+                        <option value="Saudi Arabia">Saudi Arabia</option>
+                        <option value="UAE">UAE</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="Malaysia">Malaysia</option>
+                    </select>
+                    <br />
+
+                    <!-- State / City -->
+                    <select class="form-control" name="state" id="state-select">
+                        <option value="">Select State / City</option>
+                    </select>
+                    <br />
+
+                    <!-- Street Address -->
+                    <input type="text" class="form-control" name="street_address" placeholder="Street Address"
+                        value="{{ street_address|default_if_none:'' }}">
+                    <br />
+
+                    <!-- Password -->
+                    <input type="password" class="form-control" name="password" placeholder="Password">
+                    <br />
+
+                    <!-- Confirm Password -->
+                    <input type="password" class="form-control" name="confirm_password" placeholder="Confirm Password">
+                    <br />
+
+                    <!-- Captcha -->
+                    <input type="text" class="form-control" name="captcha" placeholder="Captcha">
+                    <br />
+                    <img src="data:image/jpeg;base64,{{ captcha_image }}" alt="Captcha">
+                    <br /><br />
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn btn-secondary">Register Firm</button>
+                </form>
+
+                <br /><br /><br /><br /><br /><br />
+            </div>
+        </center>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const stateOptions = {
+        'USA': ['California', 'New York', 'Texas', 'Florida', 'Illinois', 'Pennsylvania', 'Ohio', 'Georgia', 'North Carolina', 'Michigan'],
+        'India': ['Maharashtra', 'Karnataka', 'Delhi', 'Tamil Nadu', 'Uttar Pradesh', 'West Bengal', 'Gujarat', 'Rajasthan', 'Kerala', 'Punjab'],
+        'UK': ['London', 'Manchester', 'Birmingham', 'Liverpool', 'Leeds', 'Glasgow', 'Edinburgh', 'Bristol', 'Sheffield', 'Cardiff'],
+        'Canada': ['Ontario', 'Quebec', 'British Columbia', 'Alberta', 'Manitoba', 'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'Newfoundland', 'Prince Edward Island'],
+        'Australia': ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia', 'Tasmania', 'Canberra', 'Darwin', 'Gold Coast', 'Adelaide'],
+        'Germany': ['Berlin', 'Munich', 'Frankfurt', 'Hamburg', 'Cologne', 'Stuttgart', 'Düsseldorf', 'Dresden', 'Leipzig', 'Nuremberg'],
+        'France': ['Paris', 'Marseille', 'Lyon', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 'Montpellier', 'Bordeaux', 'Lille'],
+        'China': ['Beijing', 'Shanghai', 'Guangzhou', 'Shenzhen', 'Chengdu', 'Wuhan', 'Xi\'an', 'Hangzhou', 'Chongqing', 'Tianjin'],
+        'Japan': ['Tokyo', 'Osaka', 'Kyoto', 'Nagoya', 'Fukuoka', 'Sapporo', 'Hiroshima', 'Sendai', 'Kobe', 'Yokohama'],
+        'South Korea': ['Seoul', 'Busan', 'Incheon', 'Daegu', 'Daejeon', 'Gwangju', 'Suwon', 'Ulsan', 'Changwon', 'Jeonju'],
+        'Pakistan': ['Islamabad', 'Karachi', 'Lahore', 'Faisalabad', 'Rawalpindi', 'Multan', 'Hyderabad', 'Gujranwala', 'Peshawar', 'Quetta'],
+        'Italy': ['Rome', 'Milan', 'Naples', 'Turin', 'Palermo', 'Genoa', 'Bologna', 'Florence', 'Venice', 'Verona'],
+        'Spain': ['Madrid', 'Barcelona', 'Valencia', 'Seville', 'Zaragoza', 'Malaga', 'Murcia', 'Palma de Mallorca', 'Bilbao', 'Alicante'],
+        'Netherlands': ['Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht', 'Eindhoven', 'Groningen', 'Tilburg', 'Almere', 'Breda', 'Nijmegen'],
+        'Brazil': ['São Paulo', 'Rio de Janeiro', 'Salvador', 'Belo Horizonte', 'Brasília', 'Fortaleza', 'Curitiba', 'Manaus', 'Recife', 'Porto Alegre'],
+        'Mexico': ['Mexico City', 'Guadalajara', 'Monterrey', 'Puebla', 'Tijuana', 'Leon', 'Mérida', 'Cancún', 'Veracruz', 'Toluca'],
+        'Russia': ['Moscow', 'Saint Petersburg', 'Novosibirsk', 'Yekaterinburg', 'Nizhny Novgorod', 'Kazan', 'Chelyabinsk', 'Samara', 'Omsk', 'Rostov-on-Don'],
+        'Turkey': ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep', 'Kayseri', 'Mersin'],
+        'South Africa': ['Johannesburg', 'Cape Town', 'Durban', 'Pretoria', 'Port Elizabeth', 'Bloemfontein', 'East London', 'Pietermaritzburg', 'Kimberley', 'Polokwane'],
+        'Saudi Arabia': ['Riyadh', 'Jeddah', 'Mecca', 'Medina', 'Dammam', 'Khobar', 'Dhahran', 'Tabuk', 'Abha', 'Khamis Mushait'],
+        'UAE': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al-Quwain', 'Al Ain', 'Khor Fakkan', 'Dibba Al-Fujairah'],
+        'Singapore': ['Central Region', 'North Region', 'North-East Region', 'East Region', 'West Region'],
+        'Malaysia': ['Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Sabah', 'Sarawak', 'Perak', 'Kelantan', 'Terengganu', 'Negeri Sembilan']
+        };
+
+        const countrySelect = document.getElementById('country-select');
+        const stateSelect = document.getElementById('state-select');
+
+        countrySelect.addEventListener('change', function () {
+            const selectedCountry = this.value;
+            const states = stateOptions[selectedCountry] || [];
+
+            stateSelect.innerHTML = '<option value="">Select State / City</option>';
+            states.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.text = state;
+                stateSelect.appendChild(option);
+            });
+        });
+
+        // Restore state if country already selected (on validation error reload)
+        const initialCountry = countrySelect.value;
+        const selectedState = "{{ state|default:'' }}";
+        if (initialCountry && stateOptions[initialCountry]) {
+            const states = stateOptions[initialCountry];
+            states.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.text = state;
+                if (state === selectedState) {
+                    option.selected = true;
+                }
+                stateSelect.appendChild(option);
+            });
+        }
+    });
+</script>
+{% endblock %}

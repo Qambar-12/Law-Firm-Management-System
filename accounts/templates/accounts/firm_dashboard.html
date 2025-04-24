@@ -1,0 +1,68 @@
+{% extends "accounts/base.html" %}
+{% block title %}Dashboard - Firmly{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Welcome to Firmly Dashboard</h2>
+<div class="d-flex">
+    <!-- Sidebar -->
+    {% include "accounts/sidebar.html" %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5>Total Cases</h5>
+        <p class="display-6">120</p>
+        <small class="text-muted">Civil: 40, Criminal: 50, Corporate: 30</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5>Cases Won vs Lost</h5>
+        <canvas id="casePie"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5>Revenue Overview</h5>
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const pieCtx = document.getElementById('casePie');
+new Chart(pieCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Won', 'Lost'],
+    datasets: [{
+      data: [75, 25],
+      backgroundColor: ['#198754', '#dc3545']
+    }]
+  }
+});
+
+const revenueCtx = document.getElementById('revenueChart');
+new Chart(revenueCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+    datasets: [{
+      label: 'Revenue',
+      data: [12000, 18000, 15000, 22000],
+      backgroundColor: '#0d6efd'
+    }]
+  }
+});
+</script>
+{% endblock %}

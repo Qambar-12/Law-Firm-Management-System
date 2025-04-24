@@ -1,39 +1,61 @@
 from django.db import models
 
-# Create your models here.
-class BaseUser(models.Model):
-    name = models.CharField(max_length=100)
-    address = models.TextField()
-    email = models.EmailField(unique=True)
-    password = models.CharField(max_length=128)
-    phone = models.CharField(max_length=15)
-    created_at = models.DateTimeField(auto_now_add=True)
+# ------------------------
+# LAW FIRM MODEL
+# ------------------------
+class LawFirm(models.Model):
+    lawfirm_id = models.AutoField(primary_key=True)
+    lawfirm_name = models.CharField(max_length=255)
+    lawfirm_email = models.EmailField(unique=True)
+    lawfirm_contact = models.CharField(max_length=20)
+    lawfirm_address = models.TextField()
+    password = models.CharField(max_length=128)  # store hashed passwords
+    lawfirm_created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        abstract = True
+    def __str__(self):
+        return self.lawfirm_name
 
-class Firm(BaseUser):
-    firm_id = models.AutoField(primary_key=True)
-
-    class Meta:
-        managed = False
-        db_table = 'firm'
-        app_label = 'none'
-
-class Lawyer(BaseUser):
+# ------------------------
+# LAWYER MODEL
+# ------------------------
+class Lawyer(models.Model):
     lawyer_id = models.AutoField(primary_key=True)
-    firm_id = models.ForeignKey(Firm, on_delete=models.CASCADE)
+    lawfirm = models.ForeignKey(LawFirm, on_delete=models.CASCADE, related_name='lawyers')
+
+    lawyer_name = models.CharField(max_length=200)
+    lawyer_email = models.EmailField()
+    lawyer_contact = models.CharField(max_length=20)
+    lawyer_specialization = models.CharField(max_length=255)
+    lawyer_hire_date = models.DateField()
+    lawyer_created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        managed = False
-        db_table = 'lawyer'
-        app_label = 'none'
+        constraints = [
+            models.UniqueConstraint(fields=['lawyer_id', 'lawfirm'], name='unique_lawyer_per_lawfirm')
+        ]
 
-class Client(BaseUser):
+    def __str__(self):
+        return self.lawyer_name
+
+
+# ------------------------
+# CLIENT MODEL
+# ------------------------
+class Client(models.Model):
     client_id = models.AutoField(primary_key=True)
-    firm_id = models.ForeignKey(Firm, on_delete=models.CASCADE)
+    lawfirm = models.ForeignKey(LawFirm, on_delete=models.CASCADE, related_name='clients')
+
+    client_name = models.CharField(max_length=200)
+    client_email = models.EmailField()
+    client_contact = models.CharField(max_length=20)
+    client_address = models.TextField()
+    client_created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        managed = False
-        db_table = 'client'
-        app_label = 'none'
+        constraints = [
+            models.UniqueConstraint(fields=['client_id', 'lawfirm'], name='unique_client_per_lawfirm')
+        ]
+
+    def __str__(self):
+        return self.client_name
+

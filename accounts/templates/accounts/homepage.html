@@ -1,0 +1,11 @@
+{% extends 'accounts/base.html' %}
+{%block content%}
+    <!-- Header / Hero -->
+    <header class="bg-light py-5 text-center border-bottom">
+        <div class="container">
+            <h1 class="display-5 fw-bold">Welcome to ⚖️Firmly</h1>
+            <p class="lead text-muted">A centralized platform for law firms, lawyers, and clients to collaborate, track cases, and manage documents efficiently.</p>
+            <a href="{% url 'firm_signup' %}" class="btn btn-primary btn-lg">Get Started</a>
+        </div>
+    </header>
+{%endblock%}
