@@ -1,12 +1,19 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect , get_object_or_404
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from .models import LawFirm
+from .models import LawFirm, Lawyer
 from .captcha import generate_captcha
+from django.core.files.storage import FileSystemStorage
+from django.db.models import Q
+import datetime,os
 def homepage(request):
     return render(request, 'accounts/homepage.html')
+def firm_dashboard(request):
+    if request.session.get('lawfirm_logged_in'):
+        return render(request, 'accounts/firm_dashboard.html')
 def firm_signup(request):
     if request.method == 'POST':
         lawfirm_name = request.POST.get('lawfirm_name', '').strip()
@@ -95,22 +102,19 @@ def firm_login(request):
             'lawfirm_email': lawfirm_email,
             'captcha_image': '',
         }
-
-        # CAPTCHA check
-        if not captcha_input:
-            messages.error(request, 'Captcha is required.')
+        if not all([lawfirm_email, password, captcha_input]):
+            messages.error(request, 'All fields are required.')
         elif captcha_input.upper() != captcha_session:
             messages.error(request, 'Incorrect CAPTCHA.')
-
-        # Email and password validations
-        elif not lawfirm_email or not password:
-            messages.error(request, 'Both email and password are required.')
         else:
             try:
                 law_firm = LawFirm.objects.get(lawfirm_email=lawfirm_email)
                 if check_password(password, law_firm.password):
                     messages.success(request, f"Welcome, {law_firm.lawfirm_name}!")
-                    return render(request,'accounts/firm_dashboard.html')
+                    request.session['lawfirm_logged_in'] = True
+                    request.session['lawfirm_id'] = law_firm.lawfirm_id
+
+                    return redirect('firm_dashboard')
                 else:
                     messages.error(request, 'Incorrect password. Please try again.')
             except LawFirm.DoesNotExist:
@@ -126,6 +130,115 @@ def firm_login(request):
         captcha_code, captcha_image = generate_captcha()
         request.session['captcha_code'] = captcha_code
         return render(request, 'accounts/firm_login.html', {'captcha_image': captcha_image})
+
+def firm_logout(request):
+    if request.session.get('lawfirm_logged_in'):
+        request.session['lawfirm_logged_in'] = False
+        del request.session['lawfirm_id']
+        messages.success(request, 'Logged out successfully.')
+    return redirect('homepage')
+
+
+def add_lawyer(request):
+    if request.method == "POST":
+        full_name = request.POST.get('full_name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        hire_date = request.POST.get('hire_date')
+        salary = request.POST.get('salary')
+        specialization = request.POST.get('specialization')
+        profile_picture = request.FILES.get('profile_picture')
+
+
+        if email and (Lawyer.objects.filter(lawyer_email=email).exists() or LawFirm.objects.filter(lawfirm_email=email).exists()):
+            messages.error(request, "Email already exists.")
+            return render(request, "accounts/add_lawyer.html")
+        if phone and Lawyer.objects.filter(lawyer_contact=phone).exists():
+            messages.error(request, "Phone number already exists.")
+            return render(request, "accounts/add_lawyer.html")
+        hire_date_obj = datetime.datetime.strptime(hire_date, "%Y-%m-%d").date()
+        if hire_date_obj > datetime.date.today():
+            messages.error("Invalid hire date.")
+            return render(request, "accounts/add_lawyer.html")
+
+        if profile_picture and not profile_picture.name.lower().endswith((".jpg", ".jpeg", ".png")):
+            messages.error("Profile picture must be a .jpg, .jpeg, or .png file.")
+
+            return render(request, "accounts/add_lawyer.html")
+        lawfirm = LawFirm.objects.filter(lawfirm_id=request.session['lawfirm_id']).first()
+        new_lawyer = Lawyer.objects.create(
+            lawfirm=lawfirm,
+            lawyer_name=full_name,
+            lawyer_email=email,
+            lawyer_contact=phone,
+            lawyer_hire_date=hire_date_obj,
+            lawyer_salary=salary,
+            lawyer_specialization=specialization,
+        )
+
+        if profile_picture:
+            ext = os.path.splitext(profile_picture.name)[1]
+            filename = f"{full_name.replace(' ', '_')}_{new_lawyer.lawyer_id}{ext}"
+            folder_path = f"lawyer_profiles/{lawfirm.lawfirm_name}_{lawfirm.lawfirm_id}/{specialization.replace(' ', '_')}/"
+            fs = FileSystemStorage(location='media/' + folder_path)
+            saved_path = fs.save(filename, profile_picture)
+
+            new_lawyer.lawyer_profile_picture.name = folder_path + filename
+            new_lawyer.save()
+
+        messages.success(request, "Lawyer added successfully.")
+        return render(request, 'accounts/firm_dashboard.html')
+    return render(request, "accounts/add_lawyer.html")
+
+def firm_view_lawyers(request):
+    lawfirm_id = request.session.get('lawfirm_id')
+    search_query = request.GET.get('search', '')
+    specialization_filter = request.GET.get('specialization', '')
+    sort_by = request.GET.get('sort_by', '')
+
+    lawyers = Lawyer.objects.filter(lawfirm_id=lawfirm_id)
+
+    if search_query:
+        lawyers = lawyers.filter(
+            Q(lawyer_name__icontains=search_query) | 
+            Q(lawyer_email__icontains=search_query)
+        )
+
+    if specialization_filter:
+        lawyers = lawyers.filter(lawyer_specialization__iexact=specialization_filter)
+
+    if sort_by == "hire_date_asc":
+        lawyers = lawyers.order_by('lawyer_hire_date')
+    elif sort_by == "hire_date_desc":
+        lawyers = lawyers.order_by('-lawyer_hire_date')
+    elif sort_by == "salary_asc":
+        lawyers = lawyers.order_by('lawyer_salary')
+    elif sort_by == "salary_desc":
+        lawyers = lawyers.order_by('-lawyer_salary')
+
+
+    context = {
+        'lawyers': lawyers
+    }
+
+    return render(request, 'accounts/firm_view_lawyers.html', context)
+
+def firm_delete_lawyer(request, lawyer_id):
+    lawfirm_id = request.session.get('lawfirm_id')
+
+    lawyer = get_object_or_404(Lawyer, pk=lawyer_id, lawfirm_id=lawfirm_id)
+
+    # Delete profile picture file if it exists
+    if lawyer.lawyer_profile_picture:
+        picture_path = os.path.join(settings.MEDIA_ROOT, lawyer.lawyer_profile_picture.name)
+        if os.path.isfile(picture_path):
+            os.remove(picture_path)
+
+    # Delete the lawyer record
+    lawyer.delete()
+
+    messages.success(request, "Lawyer deleted successfully.")
+    return redirect('firm_view_lawyers')
 
 def lawyer_login(request):
     pass
