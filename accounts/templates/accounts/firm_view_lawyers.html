@@ -1,0 +1,174 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Filter Panel -->
+    <div class="card shadow-sm p-4 mb-4">
+        <form class="row g-3 align-items-center" method="get">
+            <div class="col-md-3">
+                <h4 class="mb-0 fw-bold">Our Lawyers</h4>
+            </div>
+
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input 
+                        type="text" 
+                        class="form-control border-start-0" 
+                        name="search" 
+                        placeholder="Search by name or email"
+                        value="{{ request.GET.search }}">
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <select name="specialization" class="form-select">
+                    <option value="">All Specializations</option>
+                    <option value="Criminal Law" {% if request.GET.specialization == "Criminal Law" %}selected{% endif %}>Criminal Law</option>
+                    <option value="Family Law" {% if request.GET.specialization == "Family Law" %}selected{% endif %}>Family Law</option>
+                    <option value="Corporate Law" {% if request.GET.specialization == "Corporate Law" %}selected{% endif %}>Corporate Law</option>
+                    <option value="Civil Rights" {% if request.GET.specialization == "Civil Rights" %}selected{% endif %}>Civil Rights</option>
+                    <option value="Immigration Law" {% if request.GET.specialization == "Immigration Law" %}selected{% endif %}>Immigration Law</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="sort_by" class="form-select">
+                    <option value="">Sort by</option>
+                    <option value="hire_date_asc" {% if request.GET.sort_by == "hire_date_asc" %}selected{% endif %}>Hire Date ↑</option>
+                    <option value="hire_date_desc" {% if request.GET.sort_by == "hire_date_desc" %}selected{% endif %}>Hire Date ↓</option>
+                    <option value="salary_asc" {% if request.GET.sort_by == "salary_asc" %}selected{% endif %}>Salary ↑</option>
+                    <option value="salary_desc" {% if request.GET.sort_by == "salary_desc" %}selected{% endif %}>Salary ↓</option>
+                </select>
+            </div>
+
+            <div class="col-md-1">
+                <button class="btn btn-primary w-100" type="submit">Apply</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lawyer Cards -->
+    <div class="row g-4">
+        {% for lawyer in lawyers %}
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="row g-0">
+                    <div class="col-md-2">
+                        {% if lawyer.lawyer_profile_picture %}
+                            <img src="{{ lawyer.lawyer_profile_picture.url }}" class="img-fluid rounded-start" alt="Profile Picture">
+                        {% else %}
+                            <img src="{% static 'default_profile.png' %}" class="img-fluid rounded-start" alt="Default Picture">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-10">
+                        <div class="card-body">
+                            <h5 class="card-title mb-1">{{ lawyer.lawyer_name }}</h5>
+                            <p class="mb-1"><strong>ID:</strong> {{ lawyer.lawyer_id }}</p>
+                            <p class="mb-1"><strong>Email:</strong> {{ lawyer.lawyer_email }}</p>
+                            <p class="mb-1"><strong>Contact:</strong> {{ lawyer.lawyer_contact }}</p>
+                            <p class="mb-1"><strong>Hire Date:</strong> {{ lawyer.lawyer_hire_date }}</p>
+                            <p class="mb-1"><strong>Salary:</strong> ${{ lawyer.lawyer_salary }}</p>
+                            <p class="mb-1"><strong>Specialization:</strong> {{ lawyer.lawyer_specialization }}</p>
+                            <div class="d-flex align-items-center flex-wrap gap-2 mb-3"></div>
+                                <!-- Update button -->
+                                <button type="button" 
+                                    class="btn btn-sm btn-outline-primary me-2"
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#updateForm{{ lawyer.lawyer_id }}" 
+                                    aria-expanded="false" 
+                                    aria-controls="updateForm{{ lawyer.lawyer_id }}">
+                                    Update
+                                </button>
+
+                                <!-- Delete Button -->
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger me-2" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ lawyer.lawyer_id }}">
+                                    Delete
+                                </button>           
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ lawyer.lawyer_id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ lawyer.lawyer_id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        
+                                        <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteModalLabel{{ lawyer.lawyer_id }}">Confirm Deletion</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        
+                                        <div class="modal-body">
+                                        Are you sure you want to delete lawyer <strong>{{ lawyer.lawyer_name }}</strong> (ID: {{ lawyer.lawyer_id }})? <br>
+                                        This action cannot be undone!
+                                        </div>
+                                        
+                                        <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <a href="{% url 'firm_delete_lawyer' lawyer.lawyer_id %}" class="btn btn-danger">Delete</a>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                                <!-- View Cases Button -->
+                                <a href="#" class="btn btn-sm btn-outline-success">View Cases</a>
+                            </div>    
+                            <div class="collapse" id="updateForm{{ lawyer.lawyer_id }}">
+                                <form method="post" action="{% url 'firm_update_lawyer' lawyer.lawyer_id %}" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="lawyer_name" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="lawyer_name" name="lawyer_name" value="{{ lawyer.lawyer_name }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="lawyer_email" name="lawyer_email" value="{{ lawyer.lawyer_email }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_contact" class="form-label">Contact</label>
+                                        <input type="text" class="form-control" id="lawyer_contact" name="lawyer_contact" value="{{ lawyer.lawyer_contact }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_hire_date" class="form-label">Hire Date</label>
+                                        <input type="date" class="form-control" id="lawyer_hire_date" name="lawyer_hire_date" value="{{ lawyer.lawyer_hire_date|date:'Y-m-d' }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_salary" class="form-label">Salary</label>
+                                        <input type="number" step=".01" class="form-control" id="lawyer_salary" name="lawyer_salary" value="{{ lawyer.lawyer_salary }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_specialization" class="form-label">Specialization</label>
+                                        <select name="lawyer_specialization" id="" class="form-select">
+                                            <option value="">Select Specialization</option>
+                                            <option value="Criminal Law" {% if lawyer.lawyer_specialization == "Criminal Law" %}selected{% endif %}>Criminal Law</option>
+                                            <option value="Family Law" {% if lawyer.lawyer_specialization == "Family Law" %}selected{% endif %}>Family Law</option>
+                                            <option value="Corporate Law" {% if lawyer.lawyer_specialization == "Corporate Law" %}selected{% endif %}>Corporate Law</option>
+                                            <option value="Civil Rights" {% if lawyer.lawyer_specialization == "Civil Rights" %}selected{% endif %}>Civil Rights</option>
+                                            <option value="Immigration Law" {% if lawyer.lawyer_specialization == "Immigration Law" %}selected{% endif %}>Immigration Law</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_profile_picture" class="form-label">Profile Picture</label>
+                                        <input type="file" class="form-control" id="lawyer_profile_picture" name="lawyer_profile_picture">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center mt-5">
+            <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" alt="No lawyers found" class="img-fluid" style="max-width: 250px;">
+            <p class="text-muted mt-3 fs-5">No lawyers found.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

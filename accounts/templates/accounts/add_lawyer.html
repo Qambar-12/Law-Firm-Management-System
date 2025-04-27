@@ -1,0 +1,81 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}Add Lawyer - Firmly{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Add New Lawyer</h2>
+  <form method="post" enctype="multipart/form-data" class="shadow p-4 bg-white rounded needs-validation" novalidate>
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label for="full_name" class="form-label">Full Name</label>
+      <input type="text" class="form-control" id="full_name" name="full_name" required>
+      <div class="invalid-feedback">Please enter the lawyer's full name.</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label">Email address</label>
+      <input type="email" class="form-control" id="email" name="email" required>
+      <div class="invalid-feedback">Please enter a valid email address.</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="phone" class="form-label">Phone Number</label>
+      <input type="tel" class="form-control" id="phone" name="phone" pattern="\d{11}" required>
+      <div class="invalid-feedback">Please enter a 11-digit phone number.</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="hire_date" class="form-label">Hire Date</label>
+      <input type="date" class="form-control" id="hire_date" name="hire_date" required>
+      <div class="invalid-feedback">Please select the hire date.</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="salary" class="form-label">Salary (in USD)</label>
+      <input type="number" class="form-control" id="salary" name="salary" min="0" required>
+      <div class="invalid-feedback">Please enter a valid salary.</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="specialization" class="form-label">Specialization</label>
+      <select class="form-select" id="specialization" name="specialization" required>
+        <option value="" disabled selected>Select specialization</option>
+        <option value="Civil Law">Civil Law</option>
+        <option value="Criminal Law">Criminal Law</option>
+        <option value="Corporate Law">Corporate Law</option>
+        <option value="Family Law">Family Law</option>
+        <option value="Intellectual Property">Intellectual Property</option>
+        <option value="Tax Law">Tax Law</option>
+      </select>
+      <div class="invalid-feedback">Please choose a specialization.</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="profile_picture" class="form-label">Profile Picture</label>
+      <input class="form-control" type="file" id="profile_picture" name="profile_picture" accept="image/*" required>
+      <div class="invalid-feedback">Please upload a profile picture.</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus"></i> Add Lawyer</button>
+  </form>
+</div>
+
+<script>
+  // Bootstrap validation
+  (() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
+{% endblock %}

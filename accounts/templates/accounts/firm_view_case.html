@@ -1,0 +1,69 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Heading -->
+    <div class="card shadow-sm p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 fw-bold">Our Cases</h4>
+        </div>
+    </div>
+
+    <!-- Case Cards -->
+    <div class="row g-4">
+        {% for case in cases %}
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">{{ case.case_title }}</h5>
+                    <p class="mb-1"><strong>ID:</strong> {{ case.case_id }}</p>
+                    <p class="mb-1"><strong>Description:</strong> {{ case.case_description }}</p>
+                    <p class="mb-1"><strong>Status:</strong> {{ case.case_status }}</p>
+                    <p class="mb-1"><strong>Start Date:</strong> {{ case.case_start_date }}</p>
+                    <p class="mb-1"><strong>End Date:</strong> {{ case.case_end_date }}</p>
+
+                    <hr>
+
+                    <!-- Client Info -->
+                    <h6 class="fw-bold">Client Information</h6>
+                    <p class="mb-1"><strong>Name:</strong> {{ case.client.client_name }}</p>
+                    <p class="mb-1"><strong>Email:</strong> {{ case.client.client_email }}</p>
+                    <p class="mb-1"><strong>Contact:</strong> {{ case.client.client_contact }}</p>
+
+                    <hr>
+
+                    <!-- Assigned Lawyers -->
+                    <h6 class="fw-bold">Assigned Lawyers</h6>
+                    {% if case.lawyers.all %}
+                        <ul class="list-inline">
+                            {% for lawyer in case.lawyers.all %}
+                                <li class="list-inline-item me-3">
+                                    <span class="badge bg-primary fs-6">
+                                        {{ lawyer.lawyer_name }} ({{ lawyer.lawyer_specialization }})
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No lawyers assigned yet.</p>
+                    {% endif %}
+
+                    <div class="mt-3">
+                        <a href="#" class="btn btn-sm btn-outline-primary me-2">Update</a>
+                        <a href="#" class="btn btn-sm btn-outline-danger me-2">Delete</a>
+                        <a href="#" class="btn btn-sm btn-outline-success">View Documents</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center mt-5">
+            <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" alt="No cases found" class="img-fluid" style="max-width: 250px;">
+            <p class="text-muted mt-3 fs-5">No cases found.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
