@@ -73,40 +73,89 @@
                             <p class="mb-1"><strong>Hire Date:</strong> {{ lawyer.lawyer_hire_date }}</p>
                             <p class="mb-1"><strong>Salary:</strong> ${{ lawyer.lawyer_salary }}</p>
                             <p class="mb-1"><strong>Specialization:</strong> {{ lawyer.lawyer_specialization }}</p>
+                            <div class="d-flex align-items-center flex-wrap gap-2 mb-3"></div>
+                                <!-- Update button -->
+                                <button type="button" 
+                                    class="btn btn-sm btn-outline-primary me-2"
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#updateForm{{ lawyer.lawyer_id }}" 
+                                    aria-expanded="false" 
+                                    aria-controls="updateForm{{ lawyer.lawyer_id }}">
+                                    Update
+                                </button>
 
-                            <div class="mt-3">
-                                <a href="#" class="btn btn-sm btn-outline-primary me-2">Update</a>
-                            <!-- Delete Button -->
-                            <button type="button" 
-                                    class="btn btn-sm btn-outline-danger me-2" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#deleteModal{{ lawyer.lawyer_id }}">
-                                Delete
-                            </button>           
-                            <!-- Delete Confirmation Modal -->
-                            <div class="modal fade" id="deleteModal{{ lawyer.lawyer_id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ lawyer.lawyer_id }}" aria-hidden="true">
-                                <div class="modal-dialog">
-                                  <div class="modal-content">
-                                    
-                                    <div class="modal-header">
-                                      <h5 class="modal-title" id="deleteModalLabel{{ lawyer.lawyer_id }}">Confirm Deletion</h5>
-                                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                <!-- Delete Button -->
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger me-2" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ lawyer.lawyer_id }}">
+                                    Delete
+                                </button>           
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ lawyer.lawyer_id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ lawyer.lawyer_id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        
+                                        <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteModalLabel{{ lawyer.lawyer_id }}">Confirm Deletion</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        
+                                        <div class="modal-body">
+                                        Are you sure you want to delete lawyer <strong>{{ lawyer.lawyer_name }}</strong> (ID: {{ lawyer.lawyer_id }})? <br>
+                                        This action cannot be undone!
+                                        </div>
+                                        
+                                        <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <a href="{% url 'firm_delete_lawyer' lawyer.lawyer_id %}" class="btn btn-danger">Delete</a>
+                                        </div>
                                     </div>
-                                    
-                                    <div class="modal-body">
-                                      Are you sure you want to delete lawyer <strong>{{ lawyer.lawyer_name }}</strong> (ID: {{ lawyer.lawyer_id }})? <br>
-                                      This action cannot be undone!
                                     </div>
-                                    
-                                    <div class="modal-footer">
-                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                      <a href="{% url 'firm_delete_lawyer' lawyer.lawyer_id %}" class="btn btn-danger">Delete</a>
-                                    </div>
-                              
-                                  </div>
                                 </div>
-                              </div>
+                                <!-- View Cases Button -->
                                 <a href="#" class="btn btn-sm btn-outline-success">View Cases</a>
+                            </div>    
+                            <div class="collapse" id="updateForm{{ lawyer.lawyer_id }}">
+                                <form method="post" action="{% url 'firm_update_lawyer' lawyer.lawyer_id %}" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="lawyer_name" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="lawyer_name" name="lawyer_name" value="{{ lawyer.lawyer_name }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="lawyer_email" name="lawyer_email" value="{{ lawyer.lawyer_email }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_contact" class="form-label">Contact</label>
+                                        <input type="text" class="form-control" id="lawyer_contact" name="lawyer_contact" value="{{ lawyer.lawyer_contact }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_hire_date" class="form-label">Hire Date</label>
+                                        <input type="date" class="form-control" id="lawyer_hire_date" name="lawyer_hire_date" value="{{ lawyer.lawyer_hire_date|date:'Y-m-d' }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_salary" class="form-label">Salary</label>
+                                        <input type="number" step=".01" class="form-control" id="lawyer_salary" name="lawyer_salary" value="{{ lawyer.lawyer_salary }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_specialization" class="form-label">Specialization</label>
+                                        <select name="lawyer_specialization" id="" class="form-select">
+                                            <option value="">Select Specialization</option>
+                                            <option value="Criminal Law" {% if lawyer.lawyer_specialization == "Criminal Law" %}selected{% endif %}>Criminal Law</option>
+                                            <option value="Family Law" {% if lawyer.lawyer_specialization == "Family Law" %}selected{% endif %}>Family Law</option>
+                                            <option value="Corporate Law" {% if lawyer.lawyer_specialization == "Corporate Law" %}selected{% endif %}>Corporate Law</option>
+                                            <option value="Civil Rights" {% if lawyer.lawyer_specialization == "Civil Rights" %}selected{% endif %}>Civil Rights</option>
+                                            <option value="Immigration Law" {% if lawyer.lawyer_specialization == "Immigration Law" %}selected{% endif %}>Immigration Law</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="lawyer_profile_picture" class="form-label">Profile Picture</label>
+                                        <input type="file" class="form-control" id="lawyer_profile_picture" name="lawyer_profile_picture">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </form>
                             </div>
                         </div>
                     </div>

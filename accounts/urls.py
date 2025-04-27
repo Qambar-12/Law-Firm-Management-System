@@ -10,4 +10,5 @@ urlpatterns = [
     path('add_lawyer/', views.add_lawyer, name='add_lawyer'),
     path('firm_view_lawyers/', views.firm_view_lawyers, name='firm_view_lawyers'),
     path('firm_delete_lawyer/<int:lawyer_id>/', views.firm_delete_lawyer, name='firm_delete_lawyer'),
+    path('firm_update_lawyer/<int:lawyer_id>/', views.firm_update_lawyer, name='firm_update_lawyer'),
 ]

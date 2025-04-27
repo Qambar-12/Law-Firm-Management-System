@@ -239,6 +239,97 @@ def firm_delete_lawyer(request, lawyer_id):
 
     messages.success(request, "Lawyer deleted successfully.")
     return redirect('firm_view_lawyers')
+def firm_update_lawyer(request, lawyer_id):
+    lawfirm_id = request.session.get('lawfirm_id')
+    lawfirm = get_object_or_404(LawFirm, pk=lawfirm_id)
+    lawyer = get_object_or_404(Lawyer, pk=lawyer_id, lawfirm_id=lawfirm_id)
+
+    if request.method == "POST":
+        updated = False 
+
+        full_name = request.POST.get('lawyer_name', '').strip()
+        email = request.POST.get('lawyer_email', '').strip()
+        phone = request.POST.get('lawyer_contact', '').strip()
+        hire_date = request.POST.get('lawyer_hire_date', '').strip()
+        salary = request.POST.get('lawyer_salary', '').strip()
+        specialization = request.POST.get('lawyer_specialization', '').strip()
+        profile_picture = request.FILES.get('lawyer_profile_picture')
+
+        # 1. Validate email
+        if email and email != lawyer.lawyer_email:
+            if Lawyer.objects.exclude(pk=lawyer_id).filter(lawyer_email=email).exists():
+                messages.error(request, "Email already exists.")
+                return redirect('firm_view_lawyers')
+            lawyer.lawyer_email = email
+            updated = True
+
+        # 2. Validate phone
+        if phone and phone != lawyer.lawyer_contact:
+            if Lawyer.objects.exclude(pk=lawyer_id).filter(lawyer_contact=phone).exists():
+                messages.error(request, "Phone number already exists.")
+                return redirect('firm_view_lawyers')
+            lawyer.lawyer_contact = phone
+            updated = True
+
+        # 3. Validate hire date
+        if hire_date:
+            try:
+                hire_date_obj = datetime.datetime.strptime(hire_date, "%Y-%m-%d").date()
+                if hire_date_obj > datetime.date.today():
+                    messages.error(request, "Invalid hire date.")
+                    return redirect('firm_view_lawyers')
+                if hire_date_obj != lawyer.lawyer_hire_date:
+                    lawyer.lawyer_hire_date = hire_date_obj
+                    updated = True
+            except ValueError:
+                messages.error(request, "Invalid hire date format.")
+                return redirect('firm_view_lawyers')
+
+        # 4. Update simple fields if changed
+        if full_name and full_name != lawyer.lawyer_name:
+            lawyer.lawyer_name = full_name
+            updated = True
+
+        if salary and salary != str(lawyer.lawyer_salary):
+            lawyer.lawyer_salary = salary
+            updated = True
+
+        if specialization and specialization != lawyer.lawyer_specialization:
+            lawyer.lawyer_specialization = specialization
+            updated = True
+
+        # 5. Handle profile picture upload
+        if profile_picture:
+            if not profile_picture.name.lower().endswith((".jpg", ".jpeg", ".png")):
+                messages.error(request, "Profile picture must be a .jpg, .jpeg, or .png file.")
+                return redirect('firm_view_lawyers')
+
+            # Delete old picture if exists
+            if lawyer.lawyer_profile_picture and lawyer.lawyer_profile_picture.name:
+                old_picture_path = os.path.join(settings.MEDIA_ROOT, lawyer.lawyer_profile_picture.name)
+                if os.path.isfile(old_picture_path):
+                    os.remove(old_picture_path)
+
+            ext = os.path.splitext(profile_picture.name)[1]
+            filename = f"{full_name.replace(' ', '_')}_{lawyer.lawyer_id}{ext}"
+            folder_path = f"lawyer_profiles/{lawfirm.lawfirm_name}_{lawfirm_id}/{specialization.replace(' ', '_')}/"
+            fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, folder_path))
+            saved_path = fs.save(filename, profile_picture)
+
+            lawyer.lawyer_profile_picture.name = os.path.join(folder_path, filename)
+            updated = True
+
+        # 6. Save only if something changed
+        if updated:
+            lawyer.save()
+            messages.success(request, "Lawyer updated successfully.")
+        else:
+            messages.info(request, "No changes detected.")
+
+        return redirect('firm_view_lawyers')
+
+    return render(request, "accounts/firm_view_lawyers.html", {'lawyer': lawyer})
+
 
 def lawyer_login(request):
     pass
