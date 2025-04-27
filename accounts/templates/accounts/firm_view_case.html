@@ -1,6 +1,10 @@
 {% extends 'accounts/base.html' %}
 {% load static %}
+
 {% block content %}
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <div class="container mt-4">
 
     <!-- Heading -->
@@ -12,58 +16,199 @@
 
     <!-- Case Cards -->
     <div class="row g-4">
-        {% for case in cases %}
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title mb-2">{{ case.case_title }}</h5>
-                    <p class="mb-1"><strong>ID:</strong> {{ case.case_id }}</p>
-                    <p class="mb-1"><strong>Description:</strong> {{ case.case_description }}</p>
-                    <p class="mb-1"><strong>Status:</strong> {{ case.case_status }}</p>
-                    <p class="mb-1"><strong>Start Date:</strong> {{ case.case_start_date }}</p>
-                    <p class="mb-1"><strong>End Date:</strong> {{ case.case_end_date }}</p>
+        {% if cases %}
+            {% for case in cases %}
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-2">{{ case.case_title }}</h5>
+                        <p class="mb-1"><strong>ID:</strong> {{ case.case_id }}</p>
+                        <p class="mb-1"><strong>Description:</strong> {{ case.case_description }}</p>
+                        <p class="mb-1"><strong>Type:</strong> {{ case.case_type }}</p>
+                        <p class="mb-1"><strong>Status:</strong> {{ case.case_status }}</p>
+                        <p class="mb-1"><strong>Created at:</strong> {{ case.case_created_at }}</p>
 
-                    <hr>
 
-                    <!-- Client Info -->
-                    <h6 class="fw-bold">Client Information</h6>
-                    <p class="mb-1"><strong>Name:</strong> {{ case.client.client_name }}</p>
-                    <p class="mb-1"><strong>Email:</strong> {{ case.client.client_email }}</p>
-                    <p class="mb-1"><strong>Contact:</strong> {{ case.client.client_contact }}</p>
+                        <hr>
 
-                    <hr>
+                        <!-- Client Info -->
+                        <h6 class="fw-bold">Client Information</h6>
+                        <p class="mb-1"><strong>Name:</strong> {{ case.client.client_name }}</p>
+                        <p class="mb-1"><strong>Email:</strong> {{ case.client.client_email }}</p>
+                        <p class="mb-1"><strong>Contact:</strong> {{ case.client.client_contact }}</p>
+                        <p class="mb-1"><strong>Address:</strong> {{ case.client.client_address }}</p>
 
-                    <!-- Assigned Lawyers -->
-                    <h6 class="fw-bold">Assigned Lawyers</h6>
-                    {% if case.lawyers.all %}
-                        <ul class="list-inline">
-                            {% for lawyer in case.lawyers.all %}
-                                <li class="list-inline-item me-3">
-                                    <span class="badge bg-primary fs-6">
-                                        {{ lawyer.lawyer_name }} ({{ lawyer.lawyer_specialization }})
-                                    </span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted">No lawyers assigned yet.</p>
-                    {% endif %}
+                        <hr>
 
-                    <div class="mt-3">
-                        <a href="#" class="btn btn-sm btn-outline-primary me-2">Update</a>
-                        <a href="#" class="btn btn-sm btn-outline-danger me-2">Delete</a>
-                        <a href="#" class="btn btn-sm btn-outline-success">View Documents</a>
+                        <!-- Assigned Lawyers -->
+                        <h6 class="fw-bold">Assigned Lawyers</h6>
+                        {% if case.lawyers.all %}
+                            <ul class="list-inline">
+                                {% for lawyer in case.lawyers.all %}
+                                    <li class="list-inline-item me-3">
+                                        <span class="badge bg-primary fs-6">
+                                            {{ lawyer.lawyer_name }} ({{ lawyer.lawyer_specialization }})
+                                        </span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">No lawyers assigned yet.</p>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-primary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#updateCaseForm{{ case.case_id }}" aria-expanded="false" aria-controls="updateCaseForm{{ case.case_id }}">Update</button>
+                            <button class="btn btn-sm btn-outline-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal{{ case.case_id }}">Delete</button>
+                            <a href="#" class="btn btn-sm btn-outline-success">View Documents</a>
+                        </div>
+
+                        <!-- Update Case Form -->
+                        <div class="collapse mt-3" id="updateCaseForm{{ case.case_id }}">
+                            <form method="post" action="{% url 'firm_update_case' case_id=case.case_id %}">
+                                {% csrf_token %}
+
+                                <div class="row">
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Case Title</label>
+                                        <input type="text" class="form-control" name="case_title" value="{{ case.case_title }}" required>
+                                    </div>
+
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Case Type</label>
+                                        <select class="form-select" name="case_type" required>
+                                            <option value="Criminal" {% if case.case_type == "Criminal" %}selected{% endif %}>Criminal</option>
+                                            <option value="Civil" {% if case.case_type == "Civil" %}selected{% endif %}>Civil</option>
+                                            <option value="Corporate" {% if case.case_type == "Corporate" %}selected{% endif %}>Corporate</option>
+                                            <option value="Family" {% if case.case_type == "Family" %}selected{% endif %}>Family</option>
+                                            <option value="Property" {% if case.case_type == "Property" %}selected{% endif %}>Property</option>
+                                            <option value="Tax" {% if case.case_type == "Tax" %}selected{% endif %}>Tax</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" name="case_description" required>{{ case.case_description }}</textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Case Status</label>
+                                    <select class="form-select" name="case_status" required>
+                                        <option value="Open" {% if case.case_status == "Open" %}selected{% endif %}>Open</option>
+                                        <option value="In Progress" {% if case.case_status == "In Progress" %}selected{% endif %}>In Progress</option>
+                                        <option value="Closed" {% if case.case_status == "Closed" %}selected{% endif %}>Closed</option>
+                                        <option value="On Hold" {% if case.case_status == "On Hold" %}selected{% endif %}>On Hold</option>
+                                    </select>
+                                </div>
+
+                                <hr>
+                                <h6 class="fw-bold">Client Info</h6>
+
+                                <div class="row">
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Client Name</label>
+                                        <input type="text" class="form-control" name="client_name" value="{{ case.client.client_name }}" required>
+                                    </div>
+
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Client Email</label>
+                                        <input type="email" class="form-control" name="client_email" value="{{ case.client.client_email }}" required>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Client Contact</label>
+                                        <input type="text" class="form-control" name="client_contact" value="{{ case.client.client_contact }}" required>
+                                    </div>
+
+                                    <div class="mb-3 col-md-6">
+                                        <label class="form-label">Client Address</label>
+                                        <textarea class="form-control" name="client_address" required>{{ case.client.client_address }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Assign Lawyers</label>
+                                    <select name="lawyer_ids" class="form-select select2" multiple>
+                                        {% for lawyer in lawyers %}
+                                            <option value="{{ lawyer.lawyer_id }}" {% if lawyer in case.lawyers.all %}selected{% endif %}>
+                                                {{ lawyer.lawyer_name }} ({{ lawyer.lawyer_specialization }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>                       
+                                
+                                <button type="submit" class="btn btn-primary">Update Case</button>
+                            </form>
+                        </div>
+
                     </div>
                 </div>
             </div>
-        </div>
-        {% empty %}
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="deleteModal{{ case.case_id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ case.case_id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteModalLabel{{ case.case_id }}">Confirm Deletion</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            Are you sure you want to delete case <strong>{{ case.case_title }}</strong> (ID: {{ case.case_id }})?<br>
+                            This action cannot be undone!
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <a href="{% url 'firm_delete_case' case.case_id %}" class="btn btn-danger">Delete</a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
         <div class="col-12 text-center mt-5">
             <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" alt="No cases found" class="img-fluid" style="max-width: 250px;">
             <p class="text-muted mt-3 fs-5">No cases found.</p>
         </div>
-        {% endfor %}
+        {% endif %}
     </div>
 
 </div>
+
+<!-- Include jQuery (if not already included) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+<script>
+    // Bootstrap validation
+  (() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+
+$(document).ready(function() {
+    $('.select2').select2({
+        width: '100%' // or style: width 100%
+    });
+});
+</script>
+
 {% endblock %}

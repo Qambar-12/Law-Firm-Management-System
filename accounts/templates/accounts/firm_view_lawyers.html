@@ -114,7 +114,7 @@
                                     </div>
                                 </div>
                                 <!-- View Cases Button -->
-                                <a href="#" class="btn btn-sm btn-outline-success">View Cases</a>
+                                <a href="{% url 'firm_lawyer_cases' lawyer.lawyer_id %}" class="btn btn-sm btn-outline-success">View Cases</a>
                             </div>    
                             <div class="collapse" id="updateForm{{ lawyer.lawyer_id }}">
                                 <form method="post" action="{% url 'firm_update_lawyer' lawyer.lawyer_id %}" enctype="multipart/form-data">

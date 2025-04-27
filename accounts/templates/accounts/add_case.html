@@ -129,7 +129,9 @@
     $('#lawyer_ids').select2({
       placeholder: "Select lawyer(s)",
       allowClear: true,
-      width: '100%'
+      width: '100%',
+      closeOnSelect: false,
+      minimumInputLength: 1, 
     });
   });
 </script>

@@ -390,7 +390,9 @@ def firm_view_cases(request):
     status_filter = request.GET.get('status', '')
     sort_by       = request.GET.get('sort_by', '')
 
+    lawfirm = get_object_or_404(LawFirm, pk=lawfirm_id)
     cases = (Case.objects.filter(lawfirm_id=lawfirm_id).select_related('client').prefetch_related('lawyers'))
+    lawyers_qs = lawfirm.lawyers.all()
 
     if search_query:
         cases = cases.filter(
@@ -412,6 +414,111 @@ def firm_view_cases(request):
         cases = cases.order_by('-case_title')
 
     return render(request, 'accounts/firm_view_case.html', {
+        'cases': cases, 'lawyers':lawyers_qs
+    })
+
+def firm_delete_case(request, case_id):
+    lawfirm_id = request.session.get('lawfirm_id')
+    case = get_object_or_404(Case, pk=case_id, lawfirm_id=lawfirm_id)
+
+    case.delete()
+    messages.success(request, "Case deleted successfully.")
+    return redirect('firm_view_case')
+
+def firm_update_case(request, case_id):
+    lawfirm_id = request.session.get('lawfirm_id')
+    lawfirm = get_object_or_404(LawFirm, pk=lawfirm_id)
+    case = get_object_or_404(Case, pk=case_id, lawfirm_id=lawfirm_id)
+
+    # Retrieve existing client and lawyers for the case
+    client = case.client
+    lawyers_qs = lawfirm.lawyers.all()
+
+    if request.method == "POST":
+        updated = False
+
+        # Case fields
+        case_title = request.POST.get('case_title', '').strip()
+        case_description = request.POST.get('case_description', '').strip()
+        case_type = request.POST.get('case_type', '').strip()
+        case_status = request.POST.get('case_status', '').strip()
+
+        # Client fields
+        client_name = request.POST.get('client_name', '').strip()
+        client_email = request.POST.get('client_email', '').strip()
+        client_contact = request.POST.get('client_contact', '').strip()
+        client_address = request.POST.get('client_address', '').strip()
+
+        # --- Validate client info ---
+        if client_email and client_email != client.client_email:
+            if Client.objects.filter(client_email=client_email, lawfirm=lawfirm).exists():
+                messages.error(request, "Client with this email already exists.")
+                return redirect('firm_view_case', case_id=case.id)
+            client.client_email = client_email
+            updated = True
+
+        if client_contact and client_contact != client.client_contact:
+            if Client.objects.filter(client_contact=client_contact, lawfirm=lawfirm).exists():
+                messages.error(request, "Client with this contact already exists.")
+                return redirect('firm_view_case', case_id=case.id)
+            client.client_contact = client_contact
+            updated = True
+
+        # --- Update case fields ---
+        if case_title and case_title != case.case_title:
+            case.case_title = case_title
+            updated = True
+
+        if case_description and case_description != case.case_description:
+            case.case_description = case_description
+            updated = True
+
+        if case_type and case_type != case.case_type:
+            case.case_type = case_type
+            updated = True
+
+        if case_status and case_status != case.case_status:
+            case.case_status = case_status
+            updated = True
+
+        # --- Update client info ---
+        if client_name and client_name != client.client_name:
+            client.client_name = client_name
+            updated = True
+
+        if client_address and client_address != client.client_address:
+            client.client_address = client_address
+            updated = True
+
+        # --- Assign Lawyers (Many-to-Many) ---
+        lawyer_ids = request.POST.getlist('lawyer_ids')
+        lawyer_ids = [id for id in lawyer_ids if id.strip() != '']
+        print("POST lawyer_ids:", request.POST.getlist('lawyer_ids'))
+        selected_lawyers = lawyers_qs.filter(pk__in=lawyer_ids)
+        case.lawyers.set(selected_lawyers)
+        updated = True
+
+        # Save client and case updates
+        if updated:
+            client.save()
+            case.save()
+            messages.success(request, "Case and Client updated successfully.")
+        else:
+            messages.info(request, "No changes detected.")
+
+        return redirect('firm_view_case')
+
+    return render(request, "accounts/firm_view_case.html", {'case': case, 'client': client, 'lawyers': lawyers_qs})
+
+def firm_lawyer_cases(request, lawyer_id):
+    lawfirm_id = request.session.get('lawfirm_id')
+    lawyer = get_object_or_404(Lawyer, pk=lawyer_id, lawfirm_id=lawfirm_id)
+
+    # Filter cases where this lawyer is assigned
+    cases = Case.objects.filter(lawyers=lawyer, lawfirm_id=lawfirm_id).distinct()
+
+    return render(request, 'accounts/firm_lawyer_cases.html', {
+        'lawyer': lawyer,
         'cases': cases
     })
 

@@ -1,0 +1,38 @@
+{% extends 'accounts/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm p-4 mb-4">
+        <h4 class="fw-bold">Cases for Lawyer: {{ lawyer.lawyer_name }}</h4>
+        <p class="text-muted mb-0">Specialization: {{ lawyer.lawyer_specialization }}</p>
+    </div>
+
+    <div class="row g-4">
+        {% for case in cases %}
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ case.case_title }}</h5>
+                    <p><strong>ID:</strong> {{ case.case_id }}</p>
+                    <p><strong>Description:</strong> {{ case.case_description }}</p>
+                    <p><strong>Type:</strong> {{ case.case_type }}</p>
+                    <p><strong>Status:</strong> {{ case.case_status }}</p>
+                    <p><strong>Created At:</strong> {{ case.case_created_at }}</p>
+
+                    <hr>
+
+                    <h6 class="fw-bold">Client</h6>
+                    <p><strong>Name:</strong> {{ case.client.client_name }}</p>
+                    <p><strong>Email:</strong> {{ case.client.client_email }}</p>
+                    <p><strong>Contact:</strong> {{ case.client.client_contact }}</p>
+                    <p><strong>Address:</strong> {{ case.client.client_address }}</p>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center mt-5">
+            <p class="text-muted fs-5">No cases assigned to this lawyer.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
