@@ -36,8 +36,8 @@
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="loginDropdown">
                 <li><a class="dropdown-item" href="{% url 'firm_login' %}">Firm</a></li>
-                <li><a class="dropdown-item" href="#">Lawyer</a></li>
-                <li><a class="dropdown-item" href="#">Client</a></li>
+                <li><a class="dropdown-item" href="{% url 'user_login' role='lawyer' %}">Lawyer</a></li>
+                <li><a class="dropdown-item" href="{% url 'user_login' role='client' %}">Client</a></li>
               </ul>
             </li>
             <!-- Signup -->

@@ -5,14 +5,66 @@
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-<div class="container mt-4">
-
-    <!-- Heading -->
-    <div class="card shadow-sm p-4 mb-4">
-        <div class="d-flex justify-content-between align-items-center">
+<div class="card shadow-sm p-4 mb-4">
+    <form class="row g-2 align-items-center" method="get">
+        <!-- Title -->
+        <div class="col-auto">
             <h4 class="mb-0 fw-bold">Our Cases</h4>
         </div>
-    </div>
+
+        <!-- Search Bar -->
+        <div class="col">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input 
+                    type="text" 
+                    class="form-control border-start-0" 
+                    name="search" 
+                    placeholder="Search by case title, client name, or email"
+                    value="{{ request.GET.search }}">
+            </div>
+        </div>
+
+        <!-- Case Type Dropdown -->
+        <div class="col-auto">
+            <select name="case_type" class="form-select">
+                <option value="">Case Type</option>
+                <option value="Criminal" {% if request.GET.case_type == "Criminal" %}selected{% endif %}>Criminal</option>
+                <option value="Civil" {% if request.GET.case_type == "Civil" %}selected{% endif %}>Civil</option>
+                <option value="Corporate" {% if request.GET.case_type == "Corporate" %}selected{% endif %}>Corporate</option>
+                <option value="Family" {% if request.GET.case_type == "Family" %}selected{% endif %}>Family</option>
+                <option value="Tax" {% if request.GET.case_type == "Tax" %}selected{% endif %}>Tax</option>
+                <option value="Intellectual" {% if request.GET.case_type == "Intellectual" %}selected{% endif %}>Intellectual</option>
+            </select>
+        </div>
+
+        <!-- Case Status Dropdown -->
+        <div class="col-auto">
+            <select name="case_status" class="form-select">
+                <option value="">Status</option>
+                <option value="Active" {% if request.GET.case_status == "Active" %}selected{% endif %}>Open</option>
+                <option value="Closed" {% if request.GET.case_status == "Closed" %}selected{% endif %}>Closed</option>
+                <option value="Pending" {% if request.GET.case_status == "In Progress" %}selected{% endif %}>Pending</option>
+            </select>
+        </div>
+
+        <!-- Sort By Dropdown -->
+        <div class="col-auto">
+            <select name="sort_by" class="form-select">
+                <option value="">Created Date</option>
+                <option value="created_asc" {% if request.GET.sort_by == "created_asc" %}selected{% endif %}>Least Recent</option>
+                <option value="created_desc" {% if request.GET.sort_by == "created_desc" %}selected{% endif %}>Most Recent</option>
+            </select>
+        </div>
+
+        <!-- Apply Button -->
+        <div class="col-auto">
+            <button class="btn btn-primary" type="submit">Apply</button>
+        </div>
+    </form>
+</div>
 
     <!-- Case Cards -->
     <div class="row g-4">

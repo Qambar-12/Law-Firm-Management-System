@@ -7,9 +7,12 @@ from django.core.exceptions import ValidationError
 from .models import LawFirm, Lawyer, Client
 from cases.models import Case
 from .captcha import generate_captcha
+from .email import send_verification_email,welcome_firm_email , welcome_lawyer_email , welcome_case_email
 from django.core.files.storage import FileSystemStorage
 from django.db.models import Q
-import datetime,os
+import datetime
+from datetime import datetime, timedelta
+import os,random
 def homepage(request):
     return render(request, 'accounts/homepage.html')
 def firm_dashboard(request):
@@ -74,11 +77,11 @@ def firm_signup(request):
             )
 
             messages.success(request, 'Law firm registered successfully!')
+            welcome_firm_email(lawfirm_email)
             messages.success(request,f"Welcome {lawfirm_name}" )
+            request.session['lawfirm_logged_in'] = True
             return render(request,'accounts/firm_dashboard.html')
-
         return reload_form(request, form_data)
-
     else:
         return reload_form(request)
 
@@ -188,6 +191,7 @@ def add_lawyer(request):
             new_lawyer.save()
 
         messages.success(request, "Lawyer added successfully.")
+        welcome_lawyer_email(email,lawfirm.lawfirm_name,full_name)
         return render(request, 'accounts/firm_dashboard.html')
     return render(request, "accounts/add_lawyer.html")
 
@@ -377,45 +381,46 @@ def add_case(request):
         # --- Assign Lawyers (Many-to-Many) ---
         selected_lawyers = lawyers_qs.filter(pk__in=lawyer_ids)
         case.lawyers.set(selected_lawyers)
-
+        welcome_case_email(firm.lawfirm_name,case.case_title,client.client_name,client.client_email,[lawyer.lawyer_email for lawyer in selected_lawyers])
         messages.success(request, "Case and Client added successfully, and lawyers assigned.")
         return redirect('firm_dashboard')
 
     # GET Request: Load form with lawyers dropdown
     return render(request, "accounts/add_case.html", {'lawyers': lawyers_qs})
 
-def firm_view_cases(request):
-    lawfirm_id    = request.session.get('lawfirm_id')
-    search_query  = request.GET.get('search', '')
-    status_filter = request.GET.get('status', '')
-    sort_by       = request.GET.get('sort_by', '')
 
-    lawfirm = get_object_or_404(LawFirm, pk=lawfirm_id)
-    cases = (Case.objects.filter(lawfirm_id=lawfirm_id).select_related('client').prefetch_related('lawyers'))
-    lawyers_qs = lawfirm.lawyers.all()
+def firm_view_cases(request):
+    lawfirm_id = request.session.get('lawfirm_id')
+    search_query = request.GET.get('search', '')
+    case_type_filter = request.GET.get('case_type', '')
+    case_status_filter = request.GET.get('case_status', '')
+    sort_by = request.GET.get('sort_by', '')
+
+    cases = Case.objects.filter(lawfirm_id=lawfirm_id)
 
     if search_query:
         cases = cases.filter(
             Q(case_title__icontains=search_query) |
             Q(client__client_name__icontains=search_query) |
-            Q(lawyers__lawyer_name__icontains=search_query)
-        ).distinct()
+            Q(client__client_email__icontains=search_query)
+        )
 
-    if status_filter:
-        cases = cases.filter(case_status__iexact=status_filter)
+    if case_type_filter:
+        cases = cases.filter(case_type__iexact=case_type_filter)
+
+    if case_status_filter:
+        cases = cases.filter(case_status__iexact=case_status_filter)
 
     if sort_by == "created_asc":
-        cases = cases.order_by('case_created_at')
+        cases = cases.order_by('created_at')
     elif sort_by == "created_desc":
-        cases = cases.order_by('-case_created_at')
-    elif sort_by == "title_asc":
-        cases = cases.order_by('case_title')
-    elif sort_by == "title_desc":
-        cases = cases.order_by('-case_title')
+        cases = cases.order_by('-created_at')
 
-    return render(request, 'accounts/firm_view_case.html', {
-        'cases': cases, 'lawyers':lawyers_qs
-    })
+    context = {
+        'cases': cases
+    }
+
+    return render(request, 'accounts/firm_view_cases.html', context)
 
 def firm_delete_case(request, case_id):
     lawfirm_id = request.session.get('lawfirm_id')
@@ -522,8 +527,108 @@ def firm_lawyer_cases(request, lawyer_id):
         'cases': cases
     })
 
-def lawyer_login(request):
-    pass
-def client_login(request):
-    pass
+
+
+def user_login(request, role):
+    # role will be either "lawyer" or "client"
+    if request.method == "POST":
+        totp = request.POST.get('totp')
+
+        if not totp:
+            # Email + CAPTCHA step
+            user_email = request.POST.get('user_email', '').strip()
+            captcha_input = request.POST.get('captcha', '').strip()
+            captcha_session = request.session.get('captcha', '')
+
+            context = {
+                'user_email': user_email,
+                'captcha_image': '',
+                'role': role,
+            }
+
+
+            print("User email:", user_email)
+            if captcha_input.upper() != captcha_session:
+                messages.error(request, 'Incorrect CAPTCHA.')
+                captcha_code, captcha_image = generate_captcha()
+                request.session['captcha'] = captcha_code
+                context['captcha_image'] = captcha_image
+                return render(request, 'accounts/user_login.html', context)
+
+            try:
+                if role == 'lawyer':
+                    user = Lawyer.objects.get(lawyer_email=user_email)
+                    print("Lawyer found:", user.lawyer_name)
+                elif role == 'client':
+                    user = Client.objects.get(client_email=user_email)
+                else:
+                    raise ValueError("Invalid role")
+            except (Lawyer.DoesNotExist,Client.DoesNotExist):
+                messages.error(request, f"No {role} registered with that email.")
+                captcha_code, captcha_image = generate_captcha()
+                request.session['captcha'] = captcha_code
+                context['captcha_image'] = captcha_image
+                return render(request, 'accounts/user_login.html', context)
+
+            # If everything OK, generate TOTP and email it
+            totp_code = str(random.randint(100000, 999999))
+            request.session['totp'] = totp_code
+            request.session['totp_generated_at'] = datetime.now().isoformat()
+            request.session['user_email'] = user_email
+            request.session['role'] = role
+
+            send_verification_email(user_email, totp_code)
+
+            messages.success(request, "A verification code has been sent to your email.")
+            return render(request, 'accounts/user_login.html', {'show_totp': True, 'user_email': user_email, 'role': role})
+
+        else:
+            # TOTP step
+            session_totp = request.session.get('totp')
+            totp_generated_at = request.session.get('totp_generated_at')
+            role = request.session.get('role')
+
+            if not totp_generated_at:
+                messages.error(request, "TOTP has expired. Please try again.")
+                return redirect('user_login', role=role)
+
+            totp_generated_at = datetime.fromisoformat(totp_generated_at)
+            if datetime.now() > totp_generated_at + timedelta(seconds=60):
+                messages.error(request, "TOTP has expired. Please try again.")
+                del request.session['totp']
+                del request.session['totp_generated_at']
+                return redirect('user_login', role=role)
+
+            if totp == session_totp:
+                user_email = request.session.get('user_email')
+
+                try:
+                    if role == 'lawyer':
+                        user = Lawyer.objects.get(lawyer_email=user_email)
+                    elif role == 'client':
+                        user = Client.objects.get(client_email=user_email)
+                    else:
+                        raise ValueError("Invalid role")
+                except Exception:
+                    messages.error(request, "Something went wrong. Please try again.")
+                    return redirect('user_login', role=role)
+
+                request.session[f'{role}_logged_in'] = True
+                request.session[f'{role}_id'] = getattr(user, f'{role}_id')
+
+                # Clean session
+                for key in ['totp', 'totp_generated_at', 'user_email', 'role']:
+                    request.session.pop(key, None)
+
+                messages.success(request, f"Welcome {getattr(user, f'{role}_name')}!")
+                return redirect('homepage')  
+            else:
+                messages.error(request, "Invalid TOTP.")
+                return render(request, 'accounts/user_login.html', {'show_totp': True, 'user_email': request.session.get('user_email'), 'role': role})
+
+    else:
+        # Initial GET
+        captcha_code, captcha_image = generate_captcha()
+        request.session['captcha'] = captcha_code
+        return render(request, 'accounts/user_login.html', {'captcha_image': captcha_image, 'role': role})
 
