@@ -684,3 +684,52 @@ def lawyer_logout(request):
         del request.session['lawyer_id']
         messages.success(request, 'Logged out successfully.')
     return redirect('homepage')
+
+
+def client_dashboard(request):
+    """
+    View for Client Dashboard.
+    Displays all cases associated with the logged-in client.
+    """
+    if not request.session.get('client_logged_in'):
+        messages.error(request, "You need to log in first.")
+        return redirect('user_login', role='client')
+
+    client_id = request.session.get('client_id')
+    client = get_object_or_404(Client, pk=client_id)
+
+    # Search, filter, and sort options
+    search_query = request.GET.get('search', '')
+    case_status_filter = request.GET.get('case_status', '')
+    sort_by = request.GET.get('sort_by', '')
+
+    # Filter cases associated with the client
+    cases = Case.objects.filter(client=client).prefetch_related('lawyers')
+
+    if search_query:
+        cases = cases.filter(
+            Q(case_title__icontains=search_query) |
+            Q(lawfirm__lawfirm_name__icontains=search_query) |
+            Q(lawyers__lawyer_name__icontains=search_query)
+        ).distinct()
+
+    if case_status_filter:
+        cases = cases.filter(case_status__iexact=case_status_filter)
+
+    if sort_by == "created_asc":
+        cases = cases.order_by('case_created_at')
+    elif sort_by == "created_desc":
+        cases = cases.order_by('-case_created_at')
+
+    context = {
+        'cases': cases,
+        'client': client,
+    }
+
+    return render(request, 'accounts/client_dashboard.html', context)
+def client_logout(request):
+    if request.session.get('client_logged_in'):
+        request.session['client_logged_in'] = False
+        del request.session['client_id']
+        messages.success(request, 'Logged out successfully.')
+    return redirect('homepage')

@@ -1,0 +1,103 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Search, Filter, and Sort -->
+    <div class="card shadow-sm p-4 mb-4">
+        <form class="row g-2 align-items-center" method="get">
+            <!-- Search Bar -->
+            <div class="col">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input 
+                        type="text" 
+                        class="form-control border-start-0" 
+                        name="search" 
+                        placeholder="Search by case title, firm name, or lawyer name"
+                        value="{{ request.GET.search }}">
+                </div>
+            </div>
+
+            <!-- Case Status Dropdown -->
+            <div class="col-auto">
+                <select name="case_status" class="form-select">
+                    <option value="">Status</option>
+                    <option value="Open" {% if request.GET.case_status == "Open" %}selected{% endif %}>Open</option>
+                    <option value="In Progress" {% if request.GET.case_status == "In Progress" %}selected{% endif %}>In Progress</option>
+                    <option value="Closed" {% if request.GET.case_status == "Closed" %}selected{% endif %}>Closed</option>
+                </select>
+            </div>
+
+            <!-- Sort By Dropdown -->
+            <div class="col-auto">
+                <select name="sort_by" class="form-select">
+                    <option value="">Sort By</option>
+                    <option value="created_asc" {% if request.GET.sort_by == "created_asc" %}selected{% endif %}>Oldest First</option>
+                    <option value="created_desc" {% if request.GET.sort_by == "created_desc" %}selected{% endif %}>Newest First</option>
+                </select>
+            </div>
+
+            <!-- Apply Button -->
+            <div class="col-auto">
+                <button class="btn btn-primary" type="submit">Apply</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Case Cards -->
+    <div class="row g-4">
+        {% if cases %}
+            {% for case in cases %}
+            <div class="col-12">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">{{ case.case_title }}</h5>
+                        <p class="mb-2"><strong>Firm:</strong> {{ case.lawfirm.lawfirm_name }}</p>
+                        <p class="mb-2"><strong>Status:</strong> {{ case.case_status }}</p>
+                        <p class="mb-2"><strong>Created At:</strong> {{ case.case_created_at }}</p>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#description{{ case.id }}" aria-expanded="false" aria-controls="description{{ case.id }}">
+                                <i class="bi bi-info-circle"></i> Description
+                            </button>
+                            <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#lawyers{{ case.id }}" aria-expanded="false" aria-controls="lawyers{{ case.id }}">
+                                <i class="bi bi-people"></i> Lawyers
+                            </button>
+                            <a href="#" class="btn btn-outline-success"><i class="bi bi-chat-dots"></i> Chat</a>
+                            <button class="btn btn-outline-info"><i class="bi bi-clock-history"></i> Timeline</button>
+                            <button class="btn btn-outline-warning"><i class="bi bi-receipt"></i> Invoice</button>
+                        </div>
+
+                        <!-- Collapsible Description -->
+                        <div class="collapse mt-3" id="description{{ case.id }}">
+                            <p class="text-muted">{{ case.case_description }}</p>
+                        </div>
+
+                        <!-- Collapsible Lawyers -->
+                        <div class="collapse mt-3" id="lawyers{{ case.id }}">
+                            <ul class="list-group">
+                                {% for lawyer in case.lawyers.all %}
+                                <li class="list-group-item">{{ lawyer.lawyer_name }} - {{ lawyer.lawyer_specialization }}</li>
+                                {% empty %}
+                                <li class="list-group-item text-muted">No lawyers assigned.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col-12 text-center mt-5">
+            <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" alt="No cases found" class="img-fluid" style="max-width: 250px;">
+            <p class="text-muted mt-3 fs-5">No cases found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
