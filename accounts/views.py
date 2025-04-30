@@ -425,8 +425,9 @@ def firm_view_cases(request):
 def firm_delete_case(request, case_id):
     lawfirm_id = request.session.get('lawfirm_id')
     case = get_object_or_404(Case, pk=case_id, lawfirm_id=lawfirm_id)
+    client = case.client
 
-    case.delete()
+    client.delete()
     messages.success(request, "Case deleted successfully.")
     return redirect('firm_view_case')
 
@@ -497,8 +498,6 @@ def firm_update_case(request, case_id):
 
         # --- Assign Lawyers (Many-to-Many) ---
         lawyer_ids = request.POST.getlist('lawyer_ids')
-        lawyer_ids = [id for id in lawyer_ids if id.strip() != '']
-        print("POST lawyer_ids:", request.POST.getlist('lawyer_ids'))
         selected_lawyers = lawyers_qs.filter(pk__in=lawyer_ids)
         case.lawyers.set(selected_lawyers)
         updated = True
@@ -547,7 +546,6 @@ def user_login(request, role):
             }
 
 
-            print("User email:", user_email)
             if captcha_input.upper() != captcha_session:
                 messages.error(request, 'Incorrect CAPTCHA.')
                 captcha_code, captcha_image = generate_captcha()

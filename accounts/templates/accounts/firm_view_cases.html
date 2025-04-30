@@ -255,9 +255,13 @@
 
 $(document).ready(function() {
     $('.select2').select2({
-        width: '100%' // or style: width 100%
+            placeholder: "Select lawyer(s)",
+            allowClear: true,
+            width: '100%',
+            closeOnSelect: false,
+            minimumInputLength: 1
+        });
     });
-});
 </script>
 
 {% endblock %}
