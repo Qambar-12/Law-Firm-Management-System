@@ -621,7 +621,7 @@ def user_login(request, role):
                     request.session.pop(key, None)
 
                 messages.success(request, f"Welcome {getattr(user, f'{role}_name')}!")
-                return redirect('homepage')  
+                return redirect('lawyer_dashboard') if role == 'lawyer' else redirect('client_dashboard')
             else:
                 messages.error(request, "Invalid TOTP.")
                 return render(request, 'accounts/user_login.html', {'show_totp': True, 'user_email': request.session.get('user_email'), 'role': role})
@@ -632,3 +632,55 @@ def user_login(request, role):
         request.session['captcha'] = captcha_code
         return render(request, 'accounts/user_login.html', {'captcha_image': captcha_image, 'role': role})
 
+def lawyer_dashboard(request):
+    """
+    View for Lawyer Dashboard.
+    Displays cases assigned to the logged-in lawyer with search, filter, and sort options.
+    """
+    if not request.session.get('lawyer_logged_in'):
+        messages.error(request, "You need to log in first.")
+        return redirect('user_login', role='lawyer')
+
+    lawyer_id = request.session.get('lawyer_id')
+    lawyer = get_object_or_404(Lawyer, pk=lawyer_id)
+
+    # Search, filter, and sort options
+    search_query = request.GET.get('search', '')
+    case_type_filter = request.GET.get('case_type', '')
+    case_status_filter = request.GET.get('case_status', '')
+    sort_by = request.GET.get('sort_by', '')
+
+    # Filter cases assigned to the logged-in lawyer
+    cases = Case.objects.filter(lawyers=lawyer)
+
+    if search_query:
+        cases = cases.filter(
+            Q(case_title__icontains=search_query) |
+            Q(client__client_name__icontains=search_query) |
+            Q(client__client_email__icontains=search_query)
+        )
+
+    if case_type_filter:
+        cases = cases.filter(case_type__iexact=case_type_filter)
+
+    if case_status_filter:
+        cases = cases.filter(case_status__iexact=case_status_filter)
+
+    if sort_by == "created_asc":
+        cases = cases.order_by('case_created_at')
+    elif sort_by == "created_desc":
+        cases = cases.order_by('-case_created_at')
+
+    context = {
+        'cases': cases,
+        'lawyer': lawyer,
+    }
+
+    return render(request, 'accounts/lawyer_dashboard.html', context)
+
+def lawyer_logout(request):
+    if request.session.get('lawyer_logged_in'):
+        request.session['lawyer_logged_in'] = False
+        del request.session['lawyer_id']
+        messages.success(request, 'Logged out successfully.')
+    return redirect('homepage')
