@@ -24,4 +24,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('',views.homepage, name='homepage'),  
     path('', include('accounts.urls')),
+    path('',include('cases.urls')),
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # Serve media files in development
