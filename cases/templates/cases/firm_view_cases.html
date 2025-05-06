@@ -303,7 +303,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Assign Lawyers</label>
-                                <select name="lawyer_ids" class="form-select select2" multiple>
+                                <select class="form-select select2" name="lawyer_ids" multiple>
                                     {% for lawyer in lawyers %}
                                         <option value="{{ lawyer.lawyer_id }}" {% if lawyer in case.lawyers.all %}selected{% endif %}>
                                             {{ lawyer.lawyer_name }} ({{ lawyer.lawyer_specialization }})
