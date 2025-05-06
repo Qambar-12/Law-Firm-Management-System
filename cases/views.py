@@ -1,9 +1,13 @@
 from django.shortcuts import render , redirect, get_object_or_404
 from django.contrib import messages
-from accounts.models import LawFirm, Lawyer, Client
-from .models import Case
+from django.contrib.contenttypes.models import ContentType
+from accounts.models import LawFirm,Lawyer, Client
+from .models import Case , Document
 from django.db.models import Q
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 from accounts.email import welcome_case_email
+import os
 def add_case(request):
     firm = LawFirm.objects.filter(lawfirm_id=request.session['lawfirm_id']).first()
     lawyers_qs = firm.lawyers.all()
@@ -22,11 +26,11 @@ def add_case(request):
         lawyer_ids = request.POST.getlist('lawyer_ids') 
 
         # --- Validate duplicates ---
-        if Client.objects.filter(client_email=client_email, lawfirm=firm).exists():
-            messages.error(request, "Client with this email already exists.")
+        if Client.objects.filter(client_email=client_email, lawfirm=firm).exists() or Lawyer.objects.filter(lawyer_email=client_email, lawfirm=firm).exists():
+            messages.error(request, "Email already exists.")
             return render(request, "accounts/add_case.html", {'lawyers': lawyers_qs})
-        if Client.objects.filter(client_contact=client_contact, lawfirm=firm).exists():
-            messages.error(request, "Client with this contact already exists.")
+        if Client.objects.filter(client_contact=client_contact, lawfirm=firm).exists() or Lawyer.objects.filter(lawyer_contact=client_contact, lawfirm=firm).exists():
+            messages.error(request, "Contact already exists.")
             return render(request, "cases/add_case.html", {'lawyers': lawyers_qs})
 
         client = Client.objects.create(
@@ -57,7 +61,7 @@ def add_case(request):
     return render(request, "cases/add_case.html", {'lawyers': lawyers_qs})
 
 
-def firm_view_cases(request):
+def firm_view_case(request):
     lawfirm_id = request.session.get('lawfirm_id')
     search_query = request.GET.get('search', '')
     case_type_filter = request.GET.get('case_type', '')
@@ -125,14 +129,14 @@ def firm_update_case(request, case_id):
 
         # --- Validate client info ---
         if client_email and client_email != client.client_email:
-            if Client.objects.filter(client_email=client_email, lawfirm=lawfirm).exists():
+            if Client.objects.filter(client_email=client_email, lawfirm=lawfirm).exists() or Lawyer.objects.filter(lawyer_email=client_email, lawfirm=lawfirm).exists():
                 messages.error(request, "Client with this email already exists.")
                 return redirect('firm_view_case', case_id=case.id)
             client.client_email = client_email
             updated = True
 
         if client_contact and client_contact != client.client_contact:
-            if Client.objects.filter(client_contact=client_contact, lawfirm=lawfirm).exists():
+            if Client.objects.filter(client_contact=client_contact, lawfirm=lawfirm).exists() or Lawyer.objects.filter(lawyer_contact=client_contact, lawfirm=lawfirm).exists():
                 messages.error(request, "Client with this contact already exists.")
                 return redirect('firm_view_case', case_id=case.id)
             client.client_contact = client_contact
@@ -166,9 +170,10 @@ def firm_update_case(request, case_id):
 
         # --- Assign Lawyers (Many-to-Many) ---
         lawyer_ids = request.POST.getlist('lawyer_ids')
-        selected_lawyers = lawyers_qs.filter(pk__in=lawyer_ids)
-        case.lawyers.set(selected_lawyers)
-        updated = True
+        if lawyer_ids:
+            selected_lawyers = lawyers_qs.filter(pk__in=lawyer_ids)
+            case.lawyers.set(selected_lawyers)
+            updated = True
 
         # Save client and case updates
         if updated:
@@ -180,5 +185,104 @@ def firm_update_case(request, case_id):
 
         return redirect('firm_view_case')
 
-    return render(request, "cases/firm_view_case.html", {'case': case, 'client': client, 'lawyers': lawyers_qs})
+    return render(request, "cases/firm_view_cases.html", {'case': case, 'client': client, 'lawyers': lawyers_qs})
 
+def view_doc(request, case_id):
+    """
+    Generalized view for documents, works for lawfirm, lawyer, and client.
+    Determines role based on available session keys.
+    """
+    # Identify role and user
+    if 'lawfirm_id' in request.session:
+        role = 'lawfirm'
+        user_id = request.session['lawfirm_id']
+        user = get_object_or_404(LawFirm, pk=user_id)
+        case = get_object_or_404(Case, pk=case_id, lawfirm_id=user_id)
+    elif 'lawyer_id' in request.session:
+        role = 'lawyer'
+        user_id = request.session['lawyer_id']
+        user = get_object_or_404(Lawyer, pk=user_id)
+        case = get_object_or_404(Case, pk=case_id, lawyers=user)
+    elif 'client_id' in request.session:
+        role = 'client'
+        user_id = request.session['client_id']
+        user = get_object_or_404(Client, pk=user_id)
+        case = get_object_or_404(Case, pk=case_id, client=user)
+    else:
+        messages.error(request, "You are not authorized to view this page.")
+        return redirect('homepage')
+        
+    if role == 'lawfirm':
+        lawfirm_name = user.lawfirm_name
+        lawfirm_id = user.lawfirm_id
+    else:
+        lawfirm_name = user.lawfirm.lawfirm_name
+        lawfirm_id = user.lawfirm.lawfirm_id
+    documents = Document.objects.filter(case=case)
+
+    # Filtering
+    search_query = request.GET.get('search_doc', '')
+    uploaded_by_filter = request.GET.get('uploaded_by', '')
+    sort_by = request.GET.get('sort_by', '')
+
+    if search_query:
+        documents = documents.filter(doc_name__icontains=search_query)
+
+    if uploaded_by_filter:
+        content_type_map = {
+            'lawfirm': LawFirm,
+            'lawyer': Lawyer,
+            'client': Client
+        }
+        model = content_type_map.get(uploaded_by_filter)
+        if model:
+            ct_id = ContentType.objects.get_for_model(model).id
+            documents = documents.filter(uploaded_by_content_type_id=ct_id)
+
+    if sort_by == "recent":
+        documents = documents.order_by('-uploaded_at')
+    elif sort_by == "oldest":
+        documents = documents.order_by('uploaded_at')
+
+    # Document Upload
+    if request.method == "POST":
+        if 'delete_doc_id' in request.POST:
+            doc_id = request.POST.get('delete_doc_id')
+            doc = get_object_or_404(Document, pk=doc_id, case=case)
+            file_path = os.path.join(settings.MEDIA_ROOT, str(doc.doc_path))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            doc.delete()
+            messages.success(request, "Document deleted successfully.")
+            return redirect('view_doc', case_id=case_id)
+        else:
+            doc_name = request.POST.get('doc_name', '').strip()
+            doc_file = request.FILES.get('doc_file')
+            doc_type = request.POST.get('doc_type', '').strip()
+
+            if doc_file:
+                folder_path = f"case_documents/{lawfirm_name}_{lawfirm_id}/{case.case_title}_{case.case_id}/{case.case_type}/{role}/{doc_type}/"
+                fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, folder_path))
+                file_name = f"{doc_name}_{doc_file.name}"
+                saved_file_path = fs.save(file_name, doc_file)
+
+                Document.objects.create(
+                    case=case,
+                    doc_name=doc_name,
+                    doc_path=os.path.join(folder_path, file_name),
+                    doc_type=doc_type,
+                    uploaded_by_content_type=ContentType.objects.get_for_model(type(user)),
+                    uploaded_by_object_id=user_id,
+                )
+                messages.success(request, "Document uploaded successfully.")
+            else:
+                messages.error(request, "Please select a file to upload.")
+
+    context = {
+        'case': case,
+        'documents': documents,
+        'uploaded_by_filter': uploaded_by_filter,
+        'user_role': role,
+        'user_id': user_id,
+    }
+    return render(request, 'cases/view_documents.html', context)

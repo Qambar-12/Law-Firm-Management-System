@@ -10,8 +10,7 @@ from .captcha import generate_captcha
 from .email import send_verification_email,welcome_firm_email , welcome_lawyer_email , welcome_case_email
 from django.core.files.storage import FileSystemStorage
 from django.db.models import Q
-import datetime
-from datetime import datetime, timedelta
+import datetime as dt
 import os,random
 def homepage(request):
     return render(request, 'accounts/homepage.html')
@@ -154,14 +153,14 @@ def add_lawyer(request):
         profile_picture = request.FILES.get('profile_picture')
 
 
-        if email and (Lawyer.objects.filter(lawyer_email=email).exists() or LawFirm.objects.filter(lawfirm_email=email).exists()):
+        if email and (Lawyer.objects.filter(lawyer_email=email).exists() or LawFirm.objects.filter(lawfirm_email=email).exists() or Client.objects.filter(client_email=email).exists()):
             messages.error(request, "Email already exists.")
             return render(request, "accounts/add_lawyer.html")
         if phone and Lawyer.objects.filter(lawyer_contact=phone).exists():
             messages.error(request, "Phone number already exists.")
             return render(request, "accounts/add_lawyer.html")
-        hire_date_obj = datetime.datetime.strptime(hire_date, "%Y-%m-%d").date()
-        if hire_date_obj > datetime.date.today():
+        hire_date_obj = dt.datetime.strptime(hire_date, "%Y-%m-%d").date()
+        if hire_date_obj > dt.date.today():
             messages.error("Invalid hire date.")
             return render(request, "accounts/add_lawyer.html")
 
@@ -263,7 +262,7 @@ def firm_update_lawyer(request, lawyer_id):
 
         # 1. Validate email
         if email and email != lawyer.lawyer_email:
-            if Lawyer.objects.exclude(pk=lawyer_id).filter(lawyer_email=email).exists():
+            if Lawyer.objects.exclude(pk=lawyer_id).filter(lawyer_email=email).exists() or LawFirm.objects.filter(lawfirm_email=email).exists() or Client.objects.filter(client_email=email).exists():
                 messages.error(request, "Email already exists.")
                 return redirect('firm_view_lawyers')
             lawyer.lawyer_email = email
@@ -280,8 +279,8 @@ def firm_update_lawyer(request, lawyer_id):
         # 3. Validate hire date
         if hire_date:
             try:
-                hire_date_obj = datetime.datetime.strptime(hire_date, "%Y-%m-%d").date()
-                if hire_date_obj > datetime.date.today():
+                hire_date_obj = dt.datetime.strptime(hire_date, "%Y-%m-%d").date()
+                if hire_date_obj > dt.date.today():
                     messages.error(request, "Invalid hire date.")
                     return redirect('firm_view_lawyers')
                 if hire_date_obj != lawyer.lawyer_hire_date:
@@ -394,7 +393,7 @@ def user_login(request, role):
             # If everything OK, generate TOTP and email it
             totp_code = str(random.randint(100000, 999999))
             request.session['totp'] = totp_code
-            request.session['totp_generated_at'] = datetime.now().isoformat()
+            request.session['totp_generated_at'] = dt.datetime.now().isoformat()
             request.session['user_email'] = user_email
             request.session['role'] = role
 
@@ -413,8 +412,8 @@ def user_login(request, role):
                 messages.error(request, "TOTP has expired. Please try again.")
                 return redirect('user_login', role=role)
 
-            totp_generated_at = datetime.fromisoformat(totp_generated_at)
-            if datetime.now() > totp_generated_at + timedelta(seconds=60):
+            totp_generated_at = dt.datetime.fromisoformat(totp_generated_at)
+            if dt.datetime.now() > totp_generated_at + dt.timedelta(seconds=60):
                 messages.error(request, "TOTP has expired. Please try again.")
                 del request.session['totp']
                 del request.session['totp_generated_at']

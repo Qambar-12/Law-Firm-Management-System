@@ -107,13 +107,135 @@
                         <p class="text-muted">No lawyers assigned yet.</p>
                     {% endif %}
 
-                    <!-- Action Buttons -->
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#updateCaseForm{{ case.case_id }}" aria-expanded="false" aria-controls="updateCaseForm{{ case.case_id }}">Update</button>
-                        <button class="btn btn-sm btn-outline-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal{{ case.case_id }}">Delete</button>
-                        <a href="#" class="btn btn-sm btn-outline-success">View Documents</a>
-                    </div>
+                     <!-- Action Buttons -->
+                    <div class="mt-3 d-flex align-items-center">
+                        <!-- Update Button -->
+                        <button class="btn btn-sm btn-outline-primary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#updateCaseForm{{ case.case_id }}" aria-expanded="false" aria-controls="updateCaseForm{{ case.case_id }}">
+                            Update
+                        </button>
 
+                        <!-- Delete Button -->
+                        <button class="btn btn-sm btn-outline-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal{{ case.case_id }}">
+                            Delete
+                        </button>
+
+                        <!-- Documents Button -->
+                        <a href="{% url 'view_doc' case.case_id %}" class="btn btn-sm btn-outline-success">
+                            Documents
+                        </a>
+                    </div> 
+                    <!-- Documents Section -->
+                    <div class="collapse mt-3" id="documents{{ case.case_id }}">
+                        <h6 class="fw-bold">Documents</h6>
+
+                        <!-- Documents Navbar -->
+                        <div class="card shadow-sm p-3 mb-4">
+                            <form class="row g-2 align-items-center" method="get" action="{% url 'view_doc' case.case_id %}">
+                                <!-- Search Bar -->
+                                <div class="col">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0">
+                                            <i class="bi bi-search"></i>
+                                        </span>
+                                        <input 
+                                            type="text" 
+                                            class="form-control border-start-0" 
+                                            name="search_doc" 
+                                            placeholder="Search by document name"
+                                            value="{{ request.GET.search_doc }}">
+                                    </div>
+                                </div>
+
+                                <!-- Uploaded By Filter -->
+                                <div class="col-auto">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="uploaded_by[]" value="lawfirm" id="uploadedByLawfirm" 
+                                        {% if 'lawfirm' in uploaded_by_filters %}checked{% endif %}>
+                                        <label class="form-check-label" for="uploadedByLawfirm">Law Firm</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="uploaded_by[]" value="lawyer" id="uploadedByLawyer" 
+                                        {% if 'lawyer' in uploaded_by_filters %}checked{% endif %}>
+                                        <label class="form-check-label" for="uploadedByLawyer">Lawyer</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="uploaded_by[]" value="client" id="uploadedByClient" 
+                                        {% if 'client' in uploaded_by_filters %}checked{% endif %}>
+                                        <label class="form-check-label" for="uploadedByClient">Client</label>
+                                    </div>
+                                </div>
+
+                                <!-- Sort By Dropdown -->
+                                <div class="col-auto">
+                                    <select name="sort_by" class="form-select">
+                                        <option value="">Sort by</option>
+                                        <option value="recent" {% if request.GET.sort_by == "recent" %}selected{% endif %}>Most Recent</option>
+                                        <option value="oldest" {% if request.GET.sort_by == "oldest" %}selected{% endif %}>Oldest</option>
+                                    </select>
+                                </div>
+
+                                <!-- Apply Button -->
+                                <div class="col-auto">
+                                    <button class="btn btn-primary" type="submit">Apply</button>
+                                </div>
+                            </form>
+                        </div>  
+
+                        {% if case.documents.all %}
+                            <ul class="list-group">
+                                {% for doc in case.documents.all %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ doc.doc_name }}</strong> ({{ doc.doc_type }})<br>
+                                        <small>Uploaded by: 
+                                            {% if doc.uploaded_by_content_type.model == 'lawfirm' %}
+                                                {{ doc.uploaded_by.lawfirm_name }}
+                                            {% elif doc.uploaded_by_content_type.model == 'lawyer' %}
+                                                {{ doc.uploaded_by.lawyer_name }}
+                                            {% elif doc.uploaded_by_content_type.model == 'client' %}
+                                                {{ doc.uploaded_by.client_name }}
+                                            {% endif %}
+                                            on {{ doc.uploaded_at }}
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <a href="{{ doc.doc_path.url }}" class="btn btn-sm btn-outline-primary" target="_blank">View</a>
+                                        <!-- Delete Button -->
+                                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteDocModal{{ doc.doc_id }}">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </li>
+
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteDocModal{{ doc.doc_id }}" tabindex="-1" aria-labelledby="deleteDocModalLabel{{ doc.doc_id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteDocModalLabel{{ doc.doc_id }}">Confirm Deletion</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete the document <strong>{{ doc.doc_name }}</strong> ({{ doc.doc_type }})?<br>
+                                                This action cannot be undone!
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form method="post" action="{% url 'view_doc' case.case_id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="delete_doc_id" value="{{ doc.doc_id }}">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">No documents uploaded for this case.</p>
+                        {% endif %}
+                    </div>
                     <!-- Update Case Form -->
                     <div class="collapse mt-3" id="updateCaseForm{{ case.case_id }}">
                         <form method="post" action="{% url 'firm_update_case' case_id=case.case_id %}">
@@ -262,6 +384,6 @@ $(document).ready(function() {
             minimumInputLength: 1
         });
     });
-</script>
 
+</script>
 {% endblock %}

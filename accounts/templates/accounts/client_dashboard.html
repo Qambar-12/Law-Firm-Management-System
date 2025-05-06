@@ -67,6 +67,9 @@
                             <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#lawyers{{ case.id }}" aria-expanded="false" aria-controls="lawyers{{ case.id }}">
                                 <i class="bi bi-people"></i> Lawyers
                             </button>
+                            <a href="{% url 'view_doc' case.case_id  %}" class="btn btn-outline-success">
+                                <i class="bi bi-file-earmark-text"></i> Documents
+                            </a>
                             <a href="#" class="btn btn-outline-success"><i class="bi bi-chat-dots"></i> Chat</a>
                             <button class="btn btn-outline-info"><i class="bi bi-clock-history"></i> Timeline</button>
                             <button class="btn btn-outline-warning"><i class="bi bi-receipt"></i> Invoice</button>

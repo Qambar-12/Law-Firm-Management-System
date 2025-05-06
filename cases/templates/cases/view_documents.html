@@ -1,0 +1,173 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="card shadow-sm p-4 mb-4">
+    <h4 class="mb-0 fw-bold">Documents for Case: {{ case.case_title }}</h4>
+    <p class="text-muted">Client: {{ case.client.client_name }}</p>
+</div>
+
+<!-- Documents Navbar -->
+<div class="card shadow-sm p-3 mb-4">
+    <form class="row g-2 align-items-center" method="get" action="{% url 'view_doc' case.case_id %}">
+        <!-- Search Bar -->
+        <div class="col">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input 
+                    type="text" 
+                    class="form-control border-start-0" 
+                    name="search_doc" 
+                    placeholder="Search by document name"
+                    value="{{ request.GET.search_doc }}">
+            </div>
+        </div>
+
+        <!-- Uploaded By Filter -->
+        <div class="col-auto">
+            <select name="uploaded_by" class="form-select">
+                <option value="">Uploaded By</option>
+                <option value="lawfirm" {% if request.GET.uploaded_by == "lawfirm" %}selected{% endif %}>Law Firm</option>
+                <option value="lawyer" {% if request.GET.uploaded_by == "lawyer" %}selected{% endif %}>Lawyer</option>
+                <option value="client" {% if request.GET.uploaded_by == "client" %}selected{% endif %}>Client</option>
+            </select>
+        </div>
+        <!-- Sort By Dropdown -->
+        <div class="col-auto">
+            <select name="sort_by" class="form-select">
+                <option value="">Sort by</option>
+                <option value="recent" {% if request.GET.sort_by == "recent" %}selected{% endif %}>Most Recent</option>
+                <option value="oldest" {% if request.GET.sort_by == "oldest" %}selected{% endif %}>Oldest</option>
+            </select>
+        </div>
+
+        <!-- Apply Button -->
+        <div class="col-auto">
+            <button class="btn btn-primary" type="submit">Apply</button>
+        </div>
+    </form>
+</div>
+
+<!-- Documents List -->
+{% if documents %}
+    <ul class="list-group">
+        {% for doc in documents %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ doc.doc_name }}</strong> ({{ doc.doc_type }})<br>
+                <small>Uploaded by: 
+                    {% if doc.uploaded_by_content_type.model == 'lawfirm' %}
+                        {{ doc.uploaded_by.lawfirm_name }}
+                    {% elif doc.uploaded_by_content_type.model == 'lawyer' %}
+                        {{ doc.uploaded_by.lawyer_name }}
+                    {% elif doc.uploaded_by_content_type.model == 'client' %}
+                        {{ doc.uploaded_by.client_name }}
+                    {% endif %}
+                    on {{ doc.uploaded_at }}
+                </small>
+            </div>
+            <div>
+                <!-- View Button -->
+                <a href="{{ doc.doc_path.url }}" class="btn btn-sm btn-outline-primary" target="_blank">View</a>
+                <!-- Delete Button -->
+                {% if user_role == 'lawfirm' %}
+                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteDocModal{{ doc.doc_id }}">
+                        Delete
+                    </button>
+                {% elif user_role == doc.uploaded_by_content_type.model and user_id == doc.uploaded_by_object_id %}
+                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteDocModal{{ doc.doc_id }}">
+                        Delete
+                    </button>
+                {% endif %}
+            </div>
+        </li>
+
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deleteDocModal{{ doc.doc_id }}" tabindex="-1" aria-labelledby="deleteDocModalLabel{{ doc.doc_id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteDocModalLabel{{ doc.doc_id }}">Confirm Deletion</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete the document <strong>{{ doc.doc_name }}</strong> ({{ doc.doc_type }})?<br>
+                        This action cannot be undone!
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form method="post" action="{% url 'view_doc' case.case_id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_doc_id" value="{{ doc.doc_id }}">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </ul>
+{% else %}
+<div class="text-center mt-5">
+    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" alt="No documents found" class="img-fluid" style="max-width: 100px;">
+    <p class="text-muted mt-3 fs-5">No documents found.</p>
+</div>
+{% endif %}
+
+<!-- Upload Document Form -->
+{% if case.case_status != "Closed" %}
+<div class="card shadow-sm p-3 mb-4">
+    <form method="post" enctype="multipart/form-data" action="{% url 'view_doc' case.case_id %}" class="mt-3">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="doc_name" placeholder="Document Name" required>
+            </div>
+            <div class="col-md-4">
+                <input type="file" class="form-control" name="doc_file" required>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="doc_type" id="docTypeDropdown{{ case.case_id }}" data-case-type="{{ case.case_type }}" required>
+                    <option value="" disabled selected>Document Type</option>
+                    <!-- Options will be dynamically populated -->
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Upload</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endif %}
+<script>
+// Define a mapping of case types to document types
+const caseTypeToDocTypes = {
+    "Criminal": ["Affidavit", "Legal Notice", "Charge Sheet"],
+    "Civil": ["Agreement", "Contract", "Deed"],
+    "Corporate": ["Memorandum of Understanding", "Shareholder Agreement", "Non-Disclosure Agreement"],
+    "Family": ["Will", "Divorce Agreement", "Custody Agreement"],
+    "Tax": ["Tax Filing", "Audit Report", "Tax Notice"],
+    "Intellectual": ["Patent Application", "Trademark Registration", "Copyright Agreement"]
+};
+
+document.querySelectorAll('[id^="docTypeDropdown"]').forEach(function(dropdown) {
+const caseType = dropdown.getAttribute("data-case-type");
+
+// Clear current options
+dropdown.innerHTML = '<option value="" disabled selected>Document Type</option>';
+
+if (caseType && caseTypeToDocTypes[caseType]) {
+    caseTypeToDocTypes[caseType].forEach(function(docType) {
+        const option = document.createElement("option");
+        option.value = docType;
+        option.textContent = docType;
+        dropdown.appendChild(option);
+    });
+}
+});
+
+</script>
+
+{% endblock %}
