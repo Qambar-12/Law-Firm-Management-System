@@ -35,7 +35,7 @@
                 {% elif request.session.lawyer_logged_in %}
                     <!-- Lawyer-specific options -->
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-calendar-event"></i> Calendar</a>
+                        <a class="nav-link" href="{% url 'calendar_view' %}"><i class="bi bi-calendar-event"></i> Calendar</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'lawyer_logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
@@ -43,7 +43,7 @@
                 {% elif request.session.client_logged_in %}
                     <!-- Client-specific options -->
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-calendar-event"></i> Calendar</a>
+                        <a class="nav-link" href="{% url 'client_calendar_view' %}"><i class="bi bi-calendar-event"></i> Calendar</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'client_logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>

@@ -1,6 +1,11 @@
 from django.core.mail import send_mail
 from django.conf import settings
 import time
+
+def sanitize_email_content(content):
+    """Sanitize the email content by replacing non-breaking spaces with regular spaces."""
+    return content.replace('\xa0', ' ')
+
 def welcome_firm_email(user_email):
     """Send welcome email to the firm after successful signup."""
     subject = 'Welcome to Firmly'

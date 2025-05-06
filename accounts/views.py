@@ -11,7 +11,7 @@ from .email import send_verification_email,welcome_firm_email , welcome_lawyer_e
 from django.core.files.storage import FileSystemStorage
 from django.db.models import Q
 import datetime
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import os,random
 def homepage(request):
     return render(request, 'accounts/homepage.html')
@@ -160,8 +160,8 @@ def add_lawyer(request):
         if phone and Lawyer.objects.filter(lawyer_contact=phone).exists():
             messages.error(request, "Phone number already exists.")
             return render(request, "accounts/add_lawyer.html")
-        hire_date_obj = datetime.datetime.strptime(hire_date, "%Y-%m-%d").date()
-        if hire_date_obj > datetime.date.today():
+        hire_date_obj = datetime.strptime(hire_date, "%Y-%m-%d").date()
+        if hire_date_obj > date.today():
             messages.error("Invalid hire date.")
             return render(request, "accounts/add_lawyer.html")
 
@@ -280,8 +280,8 @@ def firm_update_lawyer(request, lawyer_id):
         # 3. Validate hire date
         if hire_date:
             try:
-                hire_date_obj = datetime.datetime.strptime(hire_date, "%Y-%m-%d").date()
-                if hire_date_obj > datetime.date.today():
+                hire_date_obj = datetime.strptime(hire_date, "%Y-%m-%d").date()
+                if hire_date_obj > date.today():
                     messages.error(request, "Invalid hire date.")
                     return redirect('firm_view_lawyers')
                 if hire_date_obj != lawyer.lawyer_hire_date:

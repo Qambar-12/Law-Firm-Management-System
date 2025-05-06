@@ -166,10 +166,10 @@ def firm_update_case(request, case_id):
 
         # --- Assign Lawyers (Many-to-Many) ---
         lawyer_ids = request.POST.getlist('lawyer_ids')
-        selected_lawyers = lawyers_qs.filter(pk__in=lawyer_ids)
-        case.lawyers.set(selected_lawyers)
-        updated = True
-
+        if lawyer_ids:  # Only update if form provides input
+            selected_lawyers = lawyers_qs.filter(pk__in=lawyer_ids)
+            case.lawyers.set(selected_lawyers)
+            updated = True
         # Save client and case updates
         if updated:
             client.save()

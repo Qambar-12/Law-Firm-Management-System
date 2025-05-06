@@ -25,4 +25,5 @@ urlpatterns = [
     path('',views.homepage, name='homepage'),  
     path('', include('accounts.urls')),
     path('',include('cases.urls')),
+    path('',include('calendar_app.urls')),
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # Serve media files in development

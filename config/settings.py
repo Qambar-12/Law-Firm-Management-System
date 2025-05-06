@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'cases',
+    'calendar_app',
 ]
 
 MIDDLEWARE = [
@@ -102,7 +103,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
         'USER': 'postgres',
-        'PASSWORD': 'qambar',
+        'PASSWORD': '90100',
         'HOST': 'localhost',
         'PORT': 5432
     }
