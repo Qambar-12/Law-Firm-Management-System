@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from accounts.models import Lawyer, Client
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
 def chat_view(request, case_id):
     chatroom=ChatRoom.objects.get(case=case_id)
@@ -31,15 +32,15 @@ def chat_view(request, case_id):
         if msg.pk not in read_ids:
             unread_separator_index = idx
             break
+    return render(request, 'chat/chatroom.html', {'chatroom': chatroom, 'chat_messages': chat_messages,'participants': participants ,'sender': str(sender),'unread_separator_index': unread_separator_index, 'PUSHER_KEY': settings.PUSHER_KEY, 'PUSHER_CLUSTER': settings.PUSHER_CLUSTER})
 
-    return render(request, 'chat/chatroom.html', {'chatroom': chatroom, 'chat_messages': chat_messages,'participants': participants ,'sender': str(sender),'unread_separator_index': unread_separator_index})
 
-
+@csrf_exempt
 def send_message(request):
     if request.method == "POST":
         content = request.POST.get('message')
         room_id = request.POST.get('room_id')
-
+        socket_id = request.POST.get('socket_id')
         chatroom = ChatRoom.objects.get(pk=room_id)
         if request.session.get('lawyer_logged_in'):
             sender = get_object_or_404(Lawyer, pk=request.session.get('lawyer_id'))
@@ -56,12 +57,13 @@ def send_message(request):
             content=content
         )
 
-    # Automatically mark the message as read by the sender
+        # Automatically mark the message as read by the sender
         MessageReadTracker.objects.create(
             message=message,
             reader_content_type=sender_type,
             reader_object_id=sender.pk
         )
+
         pusher_client.trigger(
             f'chatroom-{room_id}',
             'new-message',
@@ -71,16 +73,14 @@ def send_message(request):
                 'timestamp': str(message.timestamp)
             }
         )
-
         return JsonResponse({'status': 'Message sent'})
-
 
 
 @csrf_exempt
 def mark_messages_as_read(request):
     if request.method == "POST":
         room_id = request.POST.get('room_id')
-        chatroom = ChatRoom.objects.get(pk=room_id)
+        chatroom = get_object_or_404(ChatRoom, pk=room_id)
 
         if request.session.get('lawyer_logged_in'):
             sender = get_object_or_404(Lawyer, pk=request.session.get('lawyer_id'))
@@ -91,20 +91,21 @@ def mark_messages_as_read(request):
 
         sender_type = ContentType.objects.get_for_model(sender)
 
-        # Mark all unread messages as read
         unread_messages = Message.objects.filter(
             chatroom=chatroom
         ).exclude(
-            messagereadtracker__reader_content_type=sender_type,
-            messagereadtracker__reader_object_id=sender.pk
+            read_status__reader_content_type=sender_type,
+            read_status__reader_object_id=sender.pk
         )
 
-        for msg in unread_messages:
-            MessageReadTracker.objects.create(
+        read_tracker_objs = [
+            MessageReadTracker(
                 message=msg,
                 reader_content_type=sender_type,
                 reader_object_id=sender.pk
-            )
+            ) for msg in unread_messages
+        ]
+        MessageReadTracker.objects.bulk_create(read_tracker_objs)
 
         return JsonResponse({'status': 'Messages marked as read'})
     return JsonResponse({'error': 'Invalid request'}, status=400)
@@ -113,10 +114,15 @@ def mark_messages_as_read(request):
 def typing_event(request):
     if request.method == "POST":
         room_id = request.POST.get("room_id")
-        sender = request.user.get_full_name() or request.user.username
-
-        pusher.trigger(f'chatroom-{room_id}', 'typing', {
-            'sender': sender,
+        # Add sender info to typing event for correct display
+        if request.session.get('lawyer_logged_in'):
+            sender = get_object_or_404(Lawyer, pk=request.session.get('lawyer_id'))
+        elif request.session.get('client_logged_in'):
+            sender = get_object_or_404(Client, pk=request.session.get('client_id'))
+        else:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        pusher_client.trigger(f'chatroom-{room_id}', 'typing', {
+            'sender': str(sender),
             'timestamp': str(now())
         })
         return JsonResponse({'status': 'typing sent'})

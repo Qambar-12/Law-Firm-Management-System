@@ -32,5 +32,8 @@ class MessageReadTracker(models.Model):
     
     read_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ('message', 'reader_content_type', 'reader_object_id')
+
     def __str__(self):
         return f"Message {self.message.message_id} read by {self.reader} at {self.read_at}"

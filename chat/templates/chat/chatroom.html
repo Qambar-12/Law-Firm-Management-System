@@ -9,11 +9,13 @@
     background-color: #007bff;
     color: white;
     border-radius: 15px 15px 0 15px;
+    word-break: break-word;
   }
   .chat-bubble-received {
     background-color: #e4e6eb;
     color: #000;
     border-radius: 15px 15px 15px 0;
+    word-break: break-word;
   }
   #jump-to-latest {
     position: absolute;
@@ -22,17 +24,93 @@
     z-index: 10;
     display: none;
   }
+  @media (max-width: 991.98px) {
+    .container.mt-5.position-relative {
+      padding: 0;
+    }
+    .row.border.rounded.shadow-sm {
+      flex-direction: column;
+      height: 90vh;
+      min-height: 500px;
+    }
+    .col-md-3.bg-light.border-end.d-flex.flex-column.h-100.p-3.overflow-auto {
+      min-width: 100%;
+      max-width: 100%;
+      border-right: none !important;
+      border-bottom: 1px solid #dee2e6;
+      height: auto;
+      max-height: 120px;
+      overflow-x: auto;
+      overflow-y: auto;
+      flex-direction: row !important;
+      display: flex !important;
+      padding: 0.5rem !important;
+    }
+    .col-md-9.d-flex.flex-column.h-100.p-0.position-relative {
+      min-width: 100%;
+      max-width: 100%;
+      height: 100%;
+      padding: 0 !important;
+    }
+    .chat-bubble-sent, .chat-bubble-received {
+      max-width: 90vw !important;
+      font-size: 1rem;
+    }
+    #chat-box {
+      min-height: 200px;
+      font-size: 1rem;
+    }
+  }
+  @media (max-width: 575.98px) {
+    .container.mt-5.position-relative {
+      padding: 0;
+    }
+    .row.border.rounded.shadow-sm {
+      border-radius: 0;
+      min-height: 100vh;
+      height: 100vh;
+    }
+    .col-md-3.bg-light.border-end.d-flex.flex-column.h-100.p-3.overflow-auto {
+      min-width: 100vw;
+      max-width: 100vw;
+      max-height: 80px;
+      font-size: 0.95rem;
+      padding: 0.25rem !important;
+    }
+    .col-md-9.d-flex.flex-column.h-100.p-0.position-relative {
+      min-width: 100vw;
+      max-width: 100vw;
+      height: 100%;
+      padding: 0 !important;
+    }
+    .chat-bubble-sent, .chat-bubble-received {
+      max-width: 98vw !important;
+      font-size: 0.98rem;
+    }
+    #chat-box {
+      min-height: 120px;
+      font-size: 0.98rem;
+    }
+    .bg-primary.text-white.p-3.d-flex.justify-content-between.align-items-center {
+      font-size: 1.1rem;
+      padding: 0.75rem !important;
+    }
+    #jump-to-latest {
+      right: 10px;
+      bottom: 70px;
+    }
+  }
 </style>
 
 <div class="container mt-5 position-relative">
-  <div class="row border rounded shadow-sm" style="height: 80vh; overflow: hidden; background: white;">
+  <div class="row border rounded shadow-sm flex-nowrap" style="height: 80vh; overflow: hidden; background: white;">
     
     <!-- Participants Sidebar -->
     <div class="col-md-3 bg-light border-end d-flex flex-column h-100 p-3 overflow-auto">
       <h5 class="text-primary mb-4">Participants</h5>
-      <ul class="list-unstyled">
+      <ul class="list-unstyled d-flex flex-md-column flex-row flex-nowrap overflow-auto mb-0">
         {% for participant in participants %}
-          <li class="mb-3 d-flex align-items-center justify-between text-dark">
+          <li class="mb-3 d-flex align-items-center justify-between text-dark me-3 me-md-0">
             <i class="bi bi-person-circle me-2 fs-4 text-secondary"></i>
             <span class="fw-semibold flex-grow-1">{{ participant }}</span>
             {% if participant|stringformat:"s" == sender %}
@@ -52,7 +130,7 @@
       </div>
 
       <!-- Messages -->
-      <div id="chat-box" class="flex-grow-1 overflow-auto p-3 bg-light" style="min-height: 0;">
+      <div id="chat-box" class="flex-grow-1 overflow-auto p-3 bg-light" style="min-height: 0; scroll-behavior: smooth;">
         {% for msg in chat_messages  %}
           {% if forloop.counter0 == unread_separator_index %}
             <div class="text-center text-muted my-2">
@@ -67,7 +145,7 @@
             <div class="d-flex justify-content-end mb-2">
               <div class="chat-bubble-sent p-2 shadow-sm" style="max-width: 75%;">
                 <p class="mb-1">{{ msg.content }}</p>
-                <small class="text-white-50">{{ msg.timestamp }}</small>
+                <small class="text-white-50 timestamp" data-utc="{{ msg.timestamp|date:'c' }}">{{ msg.timestamp }}</small>
               </div>
             </div>
           {% else %}
@@ -75,11 +153,12 @@
             <div class="d-flex justify-content-start mb-2">
               <div class="chat-bubble-received p-2 shadow-sm" style="max-width: 75%;">
                 <p class="mb-1"><strong>{{ msg.sender }}</strong>: {{ msg.content }}</p>
-                <small class="text-muted">{{ msg.timestamp }}</small>
+                <small class="text-muted timestamp" data-utc="{{ msg.timestamp|date:'c' }}">{{ msg.timestamp }}</small>
               </div>
             </div>
           {% endif %}
         {% endfor %}
+        <div id="chat-bottom-anchor"></div>
       </div>
 
       <!-- Typing indicator -->
@@ -88,7 +167,7 @@
       </div>
 
       <!-- Chat input form -->
-      <form id="chat-form" class="d-flex border-top p-3 bg-white">
+      <form id="chat-form" class="d-flex border-top p-3 bg-white position-sticky bottom-0 w-100" style="z-index:2;">
         <input type="text" id="message-input" class="form-control me-2 rounded-pill px-4" placeholder="Type a message..." autocomplete="off">
         <input type="hidden" id="room-id" value="{{ chatroom.room_id }}">
         <button type="submit" class="btn btn-primary px-4 rounded-pill">Send</button>
@@ -103,13 +182,14 @@
 <!-- Pusher + JS -->
 <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
 <script>
-  const currentSender = "{{ sender_name }}";
+  const currentSender = "{{ sender }}";
   const chatBox = document.getElementById("chat-box");
   const jumpButton = document.getElementById("jump-to-latest");
   const displayedMessages = new Set();
 
   function scrollToBottom() {
-    chatBox.scrollTop = chatBox.scrollHeight;
+    const anchor = document.getElementById('chat-bottom-anchor');
+    if (anchor) anchor.scrollIntoView({ behavior: 'smooth' });
   }
 
   function showJumpButton() {
@@ -135,37 +215,57 @@
     hideJumpButton();
   });
 
+  // Use the chatroom.room_id directly for all channel and AJAX operations
+  const roomId = "{{ chatroom.room_id }}";
   const pusher = new Pusher('{{ PUSHER_KEY }}', {
     cluster: '{{ PUSHER_CLUSTER }}',
     encrypted: true
   });
 
-  const channel = pusher.subscribe('chatroom-{{ chatroom.room_id }}');
+  console.log('Pusher key:', '{{ PUSHER_KEY }}');
+  console.log('Pusher cluster:', '{{ PUSHER_CLUSTER }}');
+
+  const channel = pusher.subscribe('chatroom-' + roomId);
+
+  // Make pusher and channel global to avoid garbage collection
+  window.pusher = pusher;
+  window.pusherChannel = channel;
+
+  pusher.connection.bind('connected', function() {
+    console.log('Pusher connection established. Socket ID:', pusher.connection.socket_id);
+  });
+  channel.bind('pusher:subscription_succeeded', function() {
+    console.log('Subscribed to channel:', channel.name);
+  });
 
   channel.bind('new-message', function(data) {
+    console.log('new-message event received:', data);
     const key = `${data.sender}-${data.timestamp}-${data.content}`;
     if (displayedMessages.has(key)) return;
     displayedMessages.add(key);
 
     const isSelf = data.sender === currentSender;
-    const wrapper = document.createElement("div");
-    wrapper.className = "d-flex " + (isSelf ? "justify-content-end" : "justify-content-start") + " mb-2";
+    // Convert UTC timestamp to local time string
+    const localTime = new Date(data.timestamp).toLocaleString();
+    if (!isSelf) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "d-flex justify-content-start mb-2";
+      const bubble = document.createElement("div");
+      bubble.className = "chat-bubble-received text-dark p-2 shadow-sm";
+      bubble.style.maxWidth = "75%";
+      bubble.innerHTML = `
+        <p class="mb-1"><strong>${data.sender}</strong>: ${data.content}</p>
+        <small class="text-muted">${localTime}</small>
+      `;
+      wrapper.appendChild(bubble);
+      chatBox.appendChild(wrapper);
 
-    const bubble = document.createElement("div");
-    bubble.className = (isSelf ? "chat-bubble-sent text-white" : "chat-bubble-received text-dark") + " p-2 shadow-sm";
-    bubble.style.maxWidth = "75%";
-    bubble.innerHTML = `
-      <p class="mb-1">${isSelf ? data.content : `<strong>${data.sender}</strong>: ${data.content}`}</p>
-      <small class="${isSelf ? 'text-white-50' : 'text-muted'}">${data.timestamp}</small>
-    `;
-    wrapper.appendChild(bubble);
-    chatBox.appendChild(wrapper);
-
-    const isAtBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 100;
-    if (isAtBottom) {
-      scrollToBottom();
-    } else {
-      showJumpButton();
+      const isAtBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 100;
+      if (isAtBottom) {
+        scrollToBottom();
+      } else {
+        showJumpButton();
+      }
     }
   });
 
@@ -191,7 +291,7 @@
         "X-CSRFToken": "{{ csrf_token }}",
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: `room_id=${document.getElementById("room-id").value}`
+      body: `room_id=${roomId}`
     });
   });
 
@@ -199,22 +299,22 @@
   document.getElementById("chat-form").addEventListener("submit", function(e) {
     e.preventDefault();
     const message = messageInput.value.trim();
-    const roomId = document.getElementById("room-id").value;
     if (!message) return;
 
+    const socketId = pusher.connection.socket_id;
     fetch("{% url 'send_message' %}", {
       method: "POST",
       headers: {
         "X-CSRFToken": "{{ csrf_token }}",
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: `message=${encodeURIComponent(message)}&room_id=${roomId}`
+      body: `message=${encodeURIComponent(message)}&room_id=${roomId}&socket_id=${socketId}`
     });
 
+    // Immediately append sender's own message
     const timestamp = new Date().toLocaleString();
     const wrapper = document.createElement("div");
     wrapper.className = "d-flex justify-content-end mb-2";
-
     const bubble = document.createElement("div");
     bubble.className = "chat-bubble-sent text-white p-2 shadow-sm";
     bubble.style.maxWidth = "75%";
@@ -224,14 +324,13 @@
     `;
     wrapper.appendChild(bubble);
     chatBox.appendChild(wrapper);
-
     scrollToBottom();
     displayedMessages.add(`${currentSender}-${timestamp}-${message}`);
     messageInput.value = '';
   });
 
   scrollToBottom();
-   
+
   function markMessagesAsRead() {
     fetch("{% url 'mark_messages_as_read' %}", {
       method: "POST",
@@ -240,22 +339,36 @@
         "Content-Type": "application/x-www-form-urlencoded"
       },
       body: `room_id=${roomId}`
-    }).then(response => {
-      if (response.ok) {
-        console.log("Messages marked as read");
-      }
-    });
+    })
+    .then(res => {
+      if (!res.ok) console.error("Failed to mark read:", res.status);
+    })
+    .catch(console.error);
   }
 
   chatBox.addEventListener("scroll", () => {
-    const isAtBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 100;
+    const threshold = 50;
+    const isAtBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < threshold;
     if (isAtBottom) {
+      hideJumpButton();
       markMessagesAsRead();
+    } else {
+      showJumpButton();
     }
   });
-  
+
+  window.addEventListener("load", () => {
+    markMessagesAsRead();
+  });
+
+  // Convert all initial message timestamps to local time
+  document.querySelectorAll('.timestamp').forEach(function(el) {
+    const utc = el.getAttribute('data-utc');
+    if (utc) {
+      const local = new Date(utc).toLocaleString();
+      el.textContent = local;
+    }
+  });
 </script>
 
-
- 
 {% endblock %}
