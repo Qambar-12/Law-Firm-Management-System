@@ -78,7 +78,7 @@
                             <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#description{{ case.id }}" aria-expanded="false" aria-controls="description{{ case.id }}">
                                 <i class="bi bi-info-circle"></i> Description
                             </button>
-                            <button class="btn btn-outline-primary"><i class="bi bi-chat-dots"></i> Chat</button>
+                            <a href="{% url 'chat_view' case.case_id  %}" class="btn btn-outline-success"><i class="bi bi-chat-dots"></i> Chat</a>
                             <a href="{% url 'view_doc' case.case_id %}" class="btn btn-outline-success">
                                 <i class="bi bi-file-earmark-text"></i> Documents
                             </a>

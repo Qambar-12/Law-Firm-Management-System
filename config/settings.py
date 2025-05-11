@@ -39,6 +39,12 @@ EMAIL_USE_TLS = env('EMAIL_USE_TLS')
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 
+# Pusher settings
+PUSHER_APP_ID = config('PUSHER_APP_ID')
+PUSHER_KEY = config('PUSHER_KEY')
+PUSHER_SECRET = config('PUSHER_SECRET')
+PUSHER_CLUSTER = config('PUSHER_CLUSTER')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -63,7 +69,9 @@ INSTALLED_APPS = [
     'accounts',
     'cases',
     'calendar_app',
+    'chat',
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

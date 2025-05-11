@@ -2,6 +2,7 @@ from django.shortcuts import render , redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from accounts.models import LawFirm,Lawyer, Client
+from chat.models import ChatRoom
 from .models import Case , Document
 from django.db.models import Q
 from django.conf import settings
@@ -28,7 +29,7 @@ def add_case(request):
         # --- Validate duplicates ---
         if Client.objects.filter(client_email=client_email, lawfirm=firm).exists() or Lawyer.objects.filter(lawyer_email=client_email, lawfirm=firm).exists():
             messages.error(request, "Email already exists.")
-            return render(request, "accounts/add_case.html", {'lawyers': lawyers_qs})
+            return render(request, "cases/add_case.html", {'lawyers': lawyers_qs})
         if Client.objects.filter(client_contact=client_contact, lawfirm=firm).exists() or Lawyer.objects.filter(lawyer_contact=client_contact, lawfirm=firm).exists():
             messages.error(request, "Contact already exists.")
             return render(request, "cases/add_case.html", {'lawyers': lawyers_qs})
@@ -50,6 +51,8 @@ def add_case(request):
             case_status=case_status
         )
 
+        # Create a chatroom for the case
+        ChatRoom.objects.create(case=case)
         # --- Assign Lawyers (Many-to-Many) ---
         selected_lawyers = lawyers_qs.filter(pk__in=lawyer_ids)
         case.lawyers.set(selected_lawyers)
@@ -98,7 +101,8 @@ def firm_delete_case(request, case_id):
     lawfirm_id = request.session.get('lawfirm_id')
     case = get_object_or_404(Case, pk=case_id, lawfirm_id=lawfirm_id)
     client = case.client
-
+    
+    ChatRoom.objects.filter(case=case).delete()  # Delete associated chatroom
     client.delete()
     messages.success(request, "Case deleted successfully.")
     return redirect('firm_view_case')
@@ -129,16 +133,16 @@ def firm_update_case(request, case_id):
 
         # --- Validate client info ---
         if client_email and client_email != client.client_email:
-            if Client.objects.filter(client_email=client_email, lawfirm=lawfirm).exists() or Lawyer.objects.filter(lawyer_email=client_email, lawfirm=lawfirm).exists():
+            if Client.objects.filter(client_email=client_email, lawfirm=lawfirm).exists() :
                 messages.error(request, "Client with this email already exists.")
-                return redirect('firm_view_case', case_id=case.id)
+                return redirect('firm_view_case')
             client.client_email = client_email
             updated = True
 
         if client_contact and client_contact != client.client_contact:
             if Client.objects.filter(client_contact=client_contact, lawfirm=lawfirm).exists() or Lawyer.objects.filter(lawyer_contact=client_contact, lawfirm=lawfirm).exists():
                 messages.error(request, "Client with this contact already exists.")
-                return redirect('firm_view_case', case_id=case.id)
+                return redirect('firm_view_case')
             client.client_contact = client_contact
             updated = True
 
