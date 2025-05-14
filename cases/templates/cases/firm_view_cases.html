@@ -120,8 +120,13 @@
                         </button>
 
                         <!-- Documents Button -->
-                        <a href="{% url 'view_doc' case.case_id %}" class="btn btn-sm btn-outline-success">
+                        <a href="{% url 'view_doc' case.case_id %}" class="btn btn-sm btn-outline-success me-2">
                             Documents
+                        </a>
+
+                        <!-- Billing Button -->
+                        <a href="{% url 'case_logs_for_invoice' case.case_id %}" class="btn btn-sm btn-outline-warning">
+                            Billing
                         </a>
                     </div> 
                     <!-- Documents Section -->

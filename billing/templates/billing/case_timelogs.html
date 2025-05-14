@@ -1,0 +1,51 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+{% block content %}
+<div class="container">
+    <h2>Time Logs for {{ case.case_title }}</h2>
+
+    {% if active_log %}
+        <p class="text-danger">Timer running since {{ active_log.start_time }}</p>
+        <form action="{% url 'stop_timer' case.case_id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Stop Timer</button>
+        </form>
+    {% else %}
+        <form action="{% url 'start_timer' case.case_id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">Start Timer</button>
+        </form>
+    {% endif %}
+
+    <hr>
+    <h4>Previous Logs</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Start</th>
+                <th>End</th>
+                <th>Duration (hrs)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in timelogs %}
+            <tr>
+                <td>{{ log.start_time }}</td>
+                <td>{{ log.end_time|default:"Ongoing" }}</td>
+                <td>{{ log.duration|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No time logs yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Optional: Enable Bootstrap tooltips -->
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock %}

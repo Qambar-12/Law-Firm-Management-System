@@ -27,4 +27,5 @@ urlpatterns = [
     path('',include('cases.urls')),
     path('',include('calendar_app.urls')),
     path('chat/', include('chat.urls')),
+    path('billing/', include('billing.urls')),
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # Serve media files in development

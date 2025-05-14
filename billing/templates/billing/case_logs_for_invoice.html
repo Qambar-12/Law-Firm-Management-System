@@ -1,0 +1,106 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Billing Logs for Case: {{ case.case_title }}</h2>
+
+    <!-- Invoice Generation Form -->
+    <form method="post" action="{% url 'generate_invoice' case.case_id %}">
+        {% csrf_token %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>Lawyer</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Duration (hrs)</th>
+                    <th>Hourly Rate</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in timelogs %}
+                <tr>
+                    <td><input type="checkbox" name="selected_logs" value="{{ log.id }}"></td>
+                    <td>{{ log.lawyer.lawyer_name }}</td>
+                    <td>{{ log.start_time }}</td>
+                    <td>{{ log.end_time|default:"Ongoing" }}</td>
+                    <td>{{ log.duration|floatformat:2 }}</td>
+                    <td>${{ log.lawyer.lawyer_hourly_rate }}</td>
+                    <td>
+                        {% with log.duration|floatformat:2 as dur %}
+                            ${{ dur|floatformat:2|floatformat:2|floatformat:2|floatformat:2|floatformat:2|floatformat:2|floatformat:2|add:log.lawyer.lawyer_hourly_rate|floatformat:2 }}
+                        {% endwith %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7">No time logs available.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary mt-3">Generate Invoice</button>
+    </form>
+
+    <!-- Generated Invoices Section -->
+    <h4 class="mt-5">Generated Invoices</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Generated At</th>
+                <th>Total Hours</th>
+                <th>Total Amount</th>
+                <th>Download</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td>{{ invoice.generated_at }}</td>
+                <td>{{ invoice.total_hours|floatformat:2 }}</td>
+                <td>${{ invoice.total_amount }}</td>
+                <td>
+                    {% if invoice.invoice_pdf %}
+                        <a href="{{ invoice.invoice_pdf.url }}" class="btn btn-sm btn-outline-primary" download>Download PDF</a>
+                    {% else %}
+                        Not available
+                    {% endif %}
+                </td>
+                <td>
+                    <!-- Delete Button triggers modal -->
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteInvoiceModal{{ invoice.id }}">
+                        Delete
+                    </button>
+                    <!-- Modal -->
+                    <div class="modal fade" id="deleteInvoiceModal{{ invoice.id }}" tabindex="-1" aria-labelledby="deleteInvoiceModalLabel{{ invoice.id }}" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="deleteInvoiceModalLabel{{ invoice.id }}">Confirm Delete</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            Are you sure you want to delete this invoice?
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form action="{% url 'delete_invoice' invoice.id %}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No invoices generated yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- Bootstrap JS (if not already included) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

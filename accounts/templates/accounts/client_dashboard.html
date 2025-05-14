@@ -72,7 +72,30 @@
                             </a>
                             <a href="{% url 'chat_view' case.case_id %}" class="btn btn-outline-success"><i class="bi bi-chat-dots"></i> Chat</a>
                             <button class="btn btn-outline-info"><i class="bi bi-clock-history"></i> Timeline</button>
-                            <button class="btn btn-outline-warning"><i class="bi bi-receipt"></i> Invoice</button>
+                            <a href="{% if case.invoices.last %}{{ case.invoices.last.invoice_pdf.url }}{% else %}#{% endif %}"
+                               class="btn btn-outline-warning d-flex align-items-center"
+                               style="min-width: 120px;"
+                               {% if not case.invoices.last %}data-bs-toggle="modal" data-bs-target="#noInvoiceModal{{ case.case_id }}"{% else %}download{% endif %}>
+                                <i class="bi bi-receipt me-2"></i>
+                                <span>Invoice</span>
+                            </a>
+                            <!-- Modal for No Invoice -->
+                            <div class="modal fade" id="noInvoiceModal{{ case.case_id }}" tabindex="-1" aria-labelledby="noInvoiceModalLabel{{ case.case_id }}" aria-hidden="true">
+                              <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <h5 class="modal-title" id="noInvoiceModalLabel{{ case.case_id }}">No Invoice Available</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                  </div>
+                                  <div class="modal-body">
+                                    No invoice has been generated for this case yet.
+                                  </div>
+                                  <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                         </div>
 
                         <!-- Collapsible Description -->

@@ -27,7 +27,7 @@ class Lawyer(models.Model):
     lawyer_contact = models.CharField(max_length=20)
     lawyer_specialization = models.CharField(max_length=255)
     lawyer_hire_date = models.DateField()
-    lawyer_salary = models.DecimalField(max_digits=10, decimal_places=2,default=0.00)
+    lawyer_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2,default=0.00)
     lawyer_profile_picture = models.ImageField(upload_to='lawyer_profiles/', null=True, blank=True)
     lawyer_created_at = models.DateTimeField(auto_now_add=True)
 

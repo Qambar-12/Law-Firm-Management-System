@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'cases',
     'calendar_app',
     'chat',
+    'billing',
 ]
 
 
