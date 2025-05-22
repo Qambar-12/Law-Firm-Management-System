@@ -71,7 +71,7 @@
                             <p class="mb-1"><strong>Email:</strong> {{ lawyer.lawyer_email }}</p>
                             <p class="mb-1"><strong>Contact:</strong> {{ lawyer.lawyer_contact }}</p>
                             <p class="mb-1"><strong>Hire Date:</strong> {{ lawyer.lawyer_hire_date }}</p>
-                            <p class="mb-1"><strong>Salary:</strong> ${{ lawyer.lawyer_salary }}</p>
+                            <p class="mb-1"><strong>Hourly Rate:</strong> ${{ lawyer.lawyer_hourly_rate }}</p>
                             <p class="mb-1"><strong>Specialization:</strong> {{ lawyer.lawyer_specialization }}</p>
                             <div class="d-flex align-items-center flex-wrap gap-2 mb-3"></div>
                                 <!-- Update button -->
@@ -136,8 +136,8 @@
                                         <input type="date" class="form-control" id="lawyer_hire_date" name="lawyer_hire_date" value="{{ lawyer.lawyer_hire_date|date:'Y-m-d' }}" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="lawyer_salary" class="form-label">Salary</label>
-                                        <input type="number" step=".01" class="form-control" id="lawyer_salary" name="lawyer_salary" value="{{ lawyer.lawyer_salary }}" required>
+                                        <label for="lawyer_hourly_rate" class="form-label">Hourly Rate</label>
+                                        <input type="number" step=".01" class="form-control" id="lawyer_hourly_rate" name="lawyer_hourly_rate" value="{{ lawyer.lawyer_hourly_rate }}" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="lawyer_specialization" class="form-label">Specialization</label>

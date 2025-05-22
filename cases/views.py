@@ -87,12 +87,21 @@ def firm_view_case(request):
         cases = cases.filter(case_status__iexact=case_status_filter)
 
     if sort_by == "created_asc":
-        cases = cases.order_by('created_at')
+        cases = cases.order_by('case_created_at')
     elif sort_by == "created_desc":
-        cases = cases.order_by('-created_at')
+        cases = cases.order_by('-case_created_at')
 
+    # Add lawyers to the context
+    lawfirm = get_object_or_404(LawFirm, pk=lawfirm_id)
+    lawyers = lawfirm.lawyers.all()
+
+    # Add missing variables to context
     context = {
-        'cases': cases
+        'cases': cases,
+        'lawyers': lawyers,
+        'uploaded_by_filters': [],  # Default empty list
+        'sort_by': sort_by,         # Default to the current sort_by value
+        'search_doc': search_query  # Default to the current search query
     }
 
     return render(request, 'cases/firm_view_cases.html', context)
@@ -173,8 +182,9 @@ def firm_update_case(request, case_id):
             updated = True
 
         # --- Assign Lawyers (Many-to-Many) ---
-        lawyer_ids = request.POST.getlist('lawyer_ids')
-        if lawyer_ids:
+        # Only update if the field is present in POST (prevents accidental removal)
+        if 'lawyer_ids' in request.POST:
+            lawyer_ids = request.POST.getlist('lawyer_ids')
             selected_lawyers = lawyers_qs.filter(pk__in=lawyer_ids)
             case.lawyers.set(selected_lawyers)
             updated = True
@@ -189,7 +199,8 @@ def firm_update_case(request, case_id):
 
         return redirect('firm_view_case')
 
-    return render(request, "cases/firm_view_cases.html", {'case': case, 'client': client, 'lawyers': lawyers_qs})
+    # GET request: ensure lawyers_qs is passed for the update form
+    return render(request, "cases/firm_view_cases.html", {'case': case, 'client': client, 'lawyers': lawyers_qs, 'uploaded_by_filters': [], 'request': request})
 
 def view_doc(request, case_id):
     """
@@ -215,13 +226,14 @@ def view_doc(request, case_id):
     else:
         messages.error(request, "You are not authorized to view this page.")
         return redirect('homepage')
-        
+
     if role == 'lawfirm':
         lawfirm_name = user.lawfirm_name
         lawfirm_id = user.lawfirm_id
     else:
         lawfirm_name = user.lawfirm.lawfirm_name
         lawfirm_id = user.lawfirm.lawfirm_id
+
     documents = Document.objects.filter(case=case)
 
     # Filtering
@@ -288,5 +300,8 @@ def view_doc(request, case_id):
         'uploaded_by_filter': uploaded_by_filter,
         'user_role': role,
         'user_id': user_id,
+        'uploaded_by_filters': [],  # Ensure this is passed to avoid template errors
+        'sort_by': sort_by,         # Ensure this is passed to avoid template errors
+        'search_doc': search_query  # Ensure this is passed to avoid template errors
     }
     return render(request, 'cases/view_documents.html', context)

@@ -12,6 +12,7 @@ from django.core.files.storage import FileSystemStorage
 from django.db.models import Q
 import datetime as dt
 import os,random
+from decimal import Decimal, InvalidOperation
 def homepage(request):
     return render(request, 'accounts/homepage.html')
 def firm_dashboard(request):
@@ -148,7 +149,7 @@ def add_lawyer(request):
         email = request.POST.get('email')
         phone = request.POST.get('phone')
         hire_date = request.POST.get('hire_date')
-        salary = request.POST.get('salary')
+        hourly_rate = request.POST.get('hourly_rate')
         specialization = request.POST.get('specialization')
         profile_picture = request.FILES.get('profile_picture')
 
@@ -169,13 +170,26 @@ def add_lawyer(request):
 
             return render(request, "accounts/add_lawyer.html")
         lawfirm = LawFirm.objects.filter(lawfirm_id=request.session['lawfirm_id']).first()
+
+        # Validate and convert hourly_rate to Decimal
+        if not hourly_rate:
+            messages.error(request, "Hourly rate is required.")
+            return render(request, "accounts/add_lawyer.html")
+        try:
+            hourly_rate_decimal = Decimal(hourly_rate)
+            if hourly_rate_decimal < 0:
+                raise InvalidOperation
+        except (InvalidOperation, ValueError):
+            messages.error(request, "Please enter a valid hourly rate.")
+            return render(request, "accounts/add_lawyer.html")
+
         new_lawyer = Lawyer.objects.create(
             lawfirm=lawfirm,
             lawyer_name=full_name,
             lawyer_email=email,
             lawyer_contact=phone,
             lawyer_hire_date=hire_date_obj,
-            lawyer_salary=salary,
+            lawyer_hourly_rate=hourly_rate_decimal,
             lawyer_specialization=specialization,
         )
 
@@ -215,10 +229,10 @@ def firm_view_lawyers(request):
         lawyers = lawyers.order_by('lawyer_hire_date')
     elif sort_by == "hire_date_desc":
         lawyers = lawyers.order_by('-lawyer_hire_date')
-    elif sort_by == "salary_asc":
-        lawyers = lawyers.order_by('lawyer_salary')
-    elif sort_by == "salary_desc":
-        lawyers = lawyers.order_by('-lawyer_salary')
+    elif sort_by == "hourly_rate_asc":
+        lawyers = lawyers.order_by('lawyer_hourly_rate')
+    elif sort_by == "hourly_rate_desc":
+        lawyers = lawyers.order_by('-lawyer_hourly_rate')
 
 
     context = {
@@ -256,7 +270,7 @@ def firm_update_lawyer(request, lawyer_id):
         email = request.POST.get('lawyer_email', '').strip()
         phone = request.POST.get('lawyer_contact', '').strip()
         hire_date = request.POST.get('lawyer_hire_date', '').strip()
-        salary = request.POST.get('lawyer_salary', '').strip()
+        hourly_rate = request.POST.get('lawyer_hourly_rate', '').strip()
         specialization = request.POST.get('lawyer_specialization', '').strip()
         profile_picture = request.FILES.get('lawyer_profile_picture')
 
@@ -295,8 +309,8 @@ def firm_update_lawyer(request, lawyer_id):
             lawyer.lawyer_name = full_name
             updated = True
 
-        if salary and salary != str(lawyer.lawyer_salary):
-            lawyer.lawyer_salary = salary
+        if hourly_rate and hourly_rate != str(lawyer.lawyer_hourly_rate):
+            lawyer.lawyer_hourly_rate = hourly_rate
             updated = True
 
         if specialization and specialization != lawyer.lawyer_specialization:
